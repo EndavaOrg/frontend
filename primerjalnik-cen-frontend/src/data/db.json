@@ -1,0 +1,114 @@
+{
+    "cars": [
+        {
+            "id": 1,
+            "brand": "Audi",
+            "model": "A4",
+            "year": 2019,
+            "engineSize": 2.0,
+            "mileage": 85000,
+            "price": 22000,
+            "source": "avto.net",
+            "link": "https://example.com/audi-a4"
+        },
+        {
+            "id": 2,
+            "brand": "BMW",
+            "model": "320d",
+            "year": 2020,
+            "engineSize": 2.0,
+            "mileage": 60000,
+            "price": 24000,
+            "source": "auto.de",
+            "link": "https://example.com/bmw-320d"
+        },
+        {
+            "id": 3,
+            "brand": "Volkswagen",
+            "model": "Golf",
+            "year": 2018,
+            "engineSize": 1.6,
+            "mileage": 95000,
+            "price": 14500,
+            "source": "avto.net",
+            "link": "https://example.com/vw-golf"
+        },
+        {
+            "id": 4,
+            "brand": "Audi",
+            "model": "A4",
+            "year": 2019,
+            "engineSize": 2.0,
+            "mileage": 88000,
+            "price": 21900,
+            "source": "auto.de",
+            "link": "https://example.com/audi-a4-de"
+        },
+        {
+            "id": 5,
+            "brand": "BMW",
+            "model": "320d",
+            "year": 2020,
+            "engineSize": 2.0,
+            "mileage": 58000,
+            "price": 23900,
+            "source": "avto.net",
+            "link": "https://example.com/bmw-320d-avtonet"
+        },
+        {
+            "id": 6,
+            "brand": "Mercedes-Benz",
+            "model": "C220",
+            "year": 2017,
+            "engineSize": 2.1,
+            "mileage": 110000,
+            "price": 21000,
+            "source": "auto.de",
+            "link": "https://example.com/mb-c220"
+        },
+        {
+            "id": 7,
+            "brand": "Volkswagen",
+            "model": "Passat",
+            "year": 2019,
+            "engineSize": 2.0,
+            "mileage": 78000,
+            "price": 19500,
+            "source": "avto.net",
+            "link": "https://example.com/vw-passat"
+        },
+        {
+            "id": 8,
+            "brand": "Skoda",
+            "model": "Octavia",
+            "year": 2021,
+            "engineSize": 1.5,
+            "mileage": 35000,
+            "price": 20500,
+            "source": "auto.de",
+            "link": "https://example.com/skoda-octavia"
+        },
+        {
+            "id": 9,
+            "brand": "Audi",
+            "model": "A4",
+            "year": 2019,
+            "engineSize": 2.0,
+            "mileage": 90000,
+            "price": 21700,
+            "source": "avto.net",
+            "link": "https://example.com/audi-a4-duplicate"
+        },
+        {
+            "id": 10,
+            "brand": "BMW",
+            "model": "320d",
+            "year": 2020,
+            "engineSize": 2.0,
+            "mileage": 62000,
+            "price": 24100,
+            "source": "auto.de",
+            "link": "https://example.com/bmw-320d-similar"
+        }
+    ]
+}
