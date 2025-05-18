@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 // import Results from './pages/Results';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import Register from './pages/Register';
+import Login from './pages/Login';
 
 
 function App() {
@@ -34,6 +36,9 @@ function App() {
         <main className="flex-grow-1">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/login" element={<Login />} />
+
             {/* <Route path="/results" element={<Results />} /> */}
           </Routes>
         </main>
