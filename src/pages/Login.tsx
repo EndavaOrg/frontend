@@ -29,9 +29,9 @@ const Login = () => {
       }
 
       const data = await res.json();
-      setMessage(`Logged in successfully! User ID: ${data.id}`);
+      setMessage(`✅ Prijava uspešna! ID: ${data.id}`);
     } catch (error: any) {
-      setMessage(`Error: ${error.message}`);
+      setMessage(`❌ Napaka: ${error.message}`);
     }
   };
 
@@ -55,38 +55,63 @@ const Login = () => {
       }
 
       const data = await res.json();
-      setMessage(`Google login successful! User ID: ${data.id}`);
+      setMessage(`✅ Google prijava uspešna! ID: ${data.id}`);
     } catch (error: any) {
-      setMessage(`Google login error: ${error.message}`);
+      setMessage(`❌ Napaka pri Google prijavi: ${error.message}`);
     }
   };
 
   return (
-    <form onSubmit={handleLogin}>
-      <h2>Login</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
-      />
-      <button type="submit">Login</button>
+    <div className="container d-flex align-items-center justify-content-center min-vh-100">
+      <div className="card shadow p-4" style={{ maxWidth: "400px", width: "100%" }}>
+        <h2 className="text-center mb-4">Sign In</h2>
 
-      <hr />
-      <button type="button" onClick={handleGoogleLogin}>
-        Sign in with Google
-      </button>
+        {message && (
+          <div className="alert alert-info text-center py-2">{message}</div>
+        )}
 
-      <p>{message}</p>
-    </form>
+        <form onSubmit={handleLogin}>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">Email naslov</label>
+            <input
+              type="email"
+              id="email"
+              className="form-control"
+              placeholder="Vnesi email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="password" className="form-label">Geslo</label>
+            <input
+              type="password"
+              id="password"
+              className="form-control"
+              placeholder="Vnesi geslo"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" className="btn btn-primary w-100 mb-3">
+            Prijava
+          </button>
+        </form>
+
+        <div className="text-center text-muted mb-3">ALI</div>
+
+        <button
+          onClick={handleGoogleLogin}
+          className="btn btn-outline-danger w-100"
+        >
+          <i className="bi bi-google me-2"></i> Prijava z Google
+        </button>
+      </div>
+    </div>
   );
 };
 
