@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { auth } from "../util/firebaseAuth";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth, googleProvider } from "../util/firebaseAuth";
+import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL; 
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,7 +17,6 @@ const Login = () => {
       const user = userCredential.user;
       const token = await user.getIdToken();
 
-      // Send token to backend login route
       const res = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,6 +32,32 @@ const Login = () => {
       setMessage(`Logged in successfully! User ID: ${data.id}`);
     } catch (error: any) {
       setMessage(`Error: ${error.message}`);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setMessage("");
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${API_BASE_URL}/api/users/loginWithGoogle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Google login failed");
+      }
+
+      const data = await res.json();
+      setMessage(`Google login successful! User ID: ${data.id}`);
+    } catch (error: any) {
+      setMessage(`Google login error: ${error.message}`);
     }
   };
 
@@ -54,6 +79,12 @@ const Login = () => {
         required
       />
       <button type="submit">Login</button>
+
+      <hr />
+      <button type="button" onClick={handleGoogleLogin}>
+        Sign in with Google
+      </button>
+
       <p>{message}</p>
     </form>
   );
