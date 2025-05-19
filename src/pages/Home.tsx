@@ -1,83 +1,10 @@
 import SearchForm from '../components/SearchForm';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
-
-const featuredCars = [
-  {
-    id: 1,
-    name: 'Volkswagen Golf 7',
-    price: '12.990 €',
-    mileage: '145.000 km',
-    location: 'Ljubljana',
-    image: 'https://cdn.pixabay.com/photo/2015/01/19/13/51/car-604019_960_720.jpg'
-  },
-  {
-    id: 2,
-    name: 'BMW 320d xDrive',
-    price: '18.500 €',
-    mileage: '98.000 km',
-    location: 'Maribor',
-    image: 'https://cdn.pixabay.com/photo/2016/04/01/11/30/bmw-1301853_960_720.jpg'
-  },
-  {
-    id: 3,
-    name: 'Audi A4 Avant',
-    price: '21.750 €',
-    mileage: '87.000 km',
-    location: 'Celje',
-    image: 'https://cdn.pixabay.com/photo/2015/01/19/13/51/car-604019_960_720.jpg'
-  },
-  {
-    id: 4,
-    name: 'Škoda Octavia RS',
-    price: '17.999 €',
-    mileage: '120.000 km',
-    location: 'Kranj',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Skoda_Octavia_RS_2.0_TSI_%282019%29_IMG_2620.jpg/640px-Skoda_Octavia_RS_2.0_TSI_%282019%29_IMG_2620.jpg'
-  },
-  {
-    id: 5,
-    name: 'Mercedes C200',
-    price: '25.300 €',
-    mileage: '63.000 km',
-    location: 'Nova Gorica',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/2018_Mercedes-Benz_C200_Avantgarde_Automatic_2.0_Front.jpg/640px-2018_Mercedes-Benz_C200_Avantgarde_Automatic_2.0_Front.jpg'
-  }
-];
-
-
-
-const PrevArrow = (props: any) => (
-  <button {...props} className="slick-prev slick-arrow" aria-label="Previous">
-    <FaArrowLeft />
-  </button>
-);
-
-const NextArrow = (props: any) => (
-  <button {...props} className="slick-next slick-arrow" aria-label="Next">
-    <FaArrowRight />
-  </button>
-);
 
 export default function Home() {
   const handleSearch = (params: any) => {
     localStorage.setItem('searchParams', JSON.stringify(params));
-  };
-
-  const sliderSettings = {
-    dots: true,
-    infinite: true,
-    speed: 600,
-    slidesToShow: 3,
-    slidesToScroll: 1,
-    arrows: true,
-    prevArrow: <PrevArrow />,
-    nextArrow: <NextArrow />,
-    responsive: [
-      { breakpoint: 992, settings: { slidesToShow: 2 } },
-      { breakpoint: 768, settings: { slidesToShow: 1 } }
-    ]
   };
 
   return (

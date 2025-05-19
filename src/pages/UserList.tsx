@@ -21,6 +21,7 @@ const UsersList: React.FC = () => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
+        console.log("Current user:", currentUser);
         try {
           const token = await user.getIdToken();
 

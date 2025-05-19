@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Register from './pages/Register';
@@ -23,7 +23,7 @@ function App() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate('/login'); // по logout те префрла на login страница
+      navigate('/login');
     } catch (error) {
       console.error("Logout error:", error);
     }
