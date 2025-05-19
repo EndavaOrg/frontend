@@ -1,19 +1,6 @@
 import SearchForm from '../components/SearchForm';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import { FaArrowLeft, FaArrowRight } from 'react-icons/fa';
-
-const PrevArrow = (props: any) => (
-  <button {...props} className="slick-prev slick-arrow" aria-label="Previous">
-    <FaArrowLeft />
-  </button>
-);
-
-const NextArrow = (props: any) => (
-  <button {...props} className="slick-next slick-arrow" aria-label="Next">
-    <FaArrowRight />
-  </button>
-);
 
 export default function Home() {
   const handleSearch = (params: any) => {
