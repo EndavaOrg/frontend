@@ -5,11 +5,14 @@ export interface CarListing {
   first_registration: number;
   mileage: number;
   fuel_type: string;
-  shifter_type: string;
+  gearbox: string;
   engine_kw: number;
+  engine_ccm?: number;
+  battery?: number;
   price: number;
-  link: string;
+  link?: string;
 }
+
 
 export interface CarSearchParams {
   make: string;
@@ -18,7 +21,7 @@ export interface CarSearchParams {
   mileageFrom: string;
   mileageTo: string;
   fuel_type: string;
-  shifter_type: string;
+  gearbox: string;
   powerUnit: 'kW' | 'HP';
   powerFrom: string;
   powerTo: string;
