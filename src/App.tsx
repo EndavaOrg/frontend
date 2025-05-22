@@ -7,6 +7,7 @@ import UsersList from './pages/UserList';
 import Results from './pages/Results';  
 
 import { getAuth, onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import CarPreferencesForm from './pages/CarPreferences';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -64,7 +65,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/userList" element={<UsersList />} /> 
-       
+          <Route path="/preferences" element={<CarPreferencesForm />} />
+
 
           <Route path="/results" element={<Results />} />
         </Routes>

@@ -1,83 +1,128 @@
-import React, { useState } from "react";
-import { auth } from "../util/firebaseAuth";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { auth } from '../util/firebaseAuth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-const Register = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+const RegisterForm: React.FC = () => {
+  const [form, setForm] = useState({
+    ime: '',
+    priimek: '',
+    telefon: '',
+    email: '',
+    geslo: '',
+  });
+
+  const [errors, setErrors] = useState({
+    telefon: '',
+  });
+
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === 'telefon') {
+      const phoneRegex = /^[0-9]{6,15}$/;
+      if (!phoneRegex.test(value)) {
+        setErrors((prev) => ({ ...prev, telefon: 'Vnesi validen broj (6-15 cifri)' }));
+      } else {
+        setErrors((prev) => ({ ...prev, telefon: '' }));
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage("");
+
+    if (errors.telefon) {
+      alert('Popravi brojot na telefon!');
+      return;
+    }
 
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // 1. Register user in Firebase
+      const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.geslo);
       const user = userCredential.user;
       const token = await user.getIdToken();
 
+      // 2. Send form data to backend
       const res = await fetch(`${API_BASE_URL}/api/users/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ime: form.ime,
+          priimek: form.priimek,
+          telefon: form.telefon,
+          email: form.email,
+          token: token
+        }),
       });
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Registracija ni uspela");
+        throw new Error(errorData.message || 'Napaka pri registraciji');
       }
 
       const data = await res.json();
       setMessage(`✅ Registracija uspešna! ID: ${data.id}`);
+      navigate('/preferences');
     } catch (error: any) {
       setMessage(`❌ Napaka: ${error.message}`);
     }
   };
 
   return (
-    <div className="container d-flex align-items-center justify-content-center min-vh-100">
-      <div className="card shadow p-4" style={{ maxWidth: "400px", width: "100%" }}>
-        <h2 className="text-center mb-4">Registracija</h2>
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-8 col-lg-6">
+          <div className="card shadow-lg p-4">
+            <h2 className="text-center mb-4">Registracija</h2>
 
-        {message && (
-          <div className="alert alert-info text-center py-2">{message}</div>
-        )}
+            {message && <div className="alert alert-info text-center">{message}</div>}
 
-        <form onSubmit={handleRegister}>
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">Email naslov</label>
-            <input
-              type="email"
-              id="email"
-              className="form-control"
-              placeholder="Vnesi email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <form onSubmit={handleSubmit}>
+              {[
+                { name: 'ime', label: 'Ime' },
+                { name: 'priimek', label: 'Priimek' },
+                { name: 'telefon', label: 'Telefonska številka' },
+                { name: 'email', label: 'Email naslov', type: 'email' },
+                { name: 'geslo', label: 'Geslo', type: 'password' },
+              ].map(({ name, label, type = 'text' }) => (
+                <div className="mb-3" key={name}>
+                  <label htmlFor={name} className="form-label">{label}</label>
+                  <input
+                    type={type}
+                    className={`form-control ${
+                      name === 'telefon' && errors.telefon ? 'is-invalid' : ''
+                    }`}
+                    id={name}
+                    name={name}
+                    placeholder={`Vnesi ${label.toLowerCase()}`}
+                    value={(form as any)[name]}
+                    onChange={handleChange}
+                    required
+                  />
+                  {name === 'telefon' && errors.telefon && (
+                    <div className="invalid-feedback">{errors.telefon}</div>
+                  )}
+                </div>
+              ))}
+
+              <button type="submit" className="btn btn-primary w-100 mt-3">
+                Registriraj se!
+              </button>
+            </form>
           </div>
-
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">Geslo</label>
-            <input
-              type="password"
-              id="password"
-              className="form-control"
-              placeholder="Vnesi geslo"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn btn-success w-100">
-            Registriraj se
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Register;
+export default RegisterForm;
