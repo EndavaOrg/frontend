@@ -6,38 +6,35 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const fetchResults = async () => {
-    const rawParams = localStorage.getItem('searchParams');
-    if (!rawParams) return;
+    const fetchResults = async () => {
+      const rawParams = localStorage.getItem('searchParams');
+      if (!rawParams) return;
 
-    const parsed = JSON.parse(rawParams);
-    const cleanedParams: Record<string, string> = {};
+      const parsed = JSON.parse(rawParams);
+      const cleanedParams: Record<string, string> = {};
 
-    for (const key in parsed) {
-    const value = parsed[key];
-    if (value !== '' && value !== null && value !== undefined) {
-        cleanedParams[key] = value;
-    }
-    }
+      for (const key in parsed) {
+        const value = parsed[key];
+        if (value !== '' && value !== null && value !== undefined) {
+          cleanedParams[key] = value;
+        }
+      }
 
+      const query = new URLSearchParams(cleanedParams).toString();
 
-    const query = new URLSearchParams(cleanedParams).toString();
+      try {
+        const response = await fetch(`http://localhost:5000/api/cars?${query}`);
+        const data = await response.json();
+        setResults(data);
+      } catch (err) {
+        console.error('Error fetching filtered cars:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    try {
-      const response = await fetch(`http://localhost:5000/api/cars?${query}`);
-      const data = await response.json();
-      setResults(data);
-    } catch (err) {
-      console.error('Error fetching filtered cars:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchResults();
-}, []);
-
-
+    fetchResults();
+  }, []);
 
   return (
     <div className="container py-5">
@@ -55,13 +52,30 @@ export default function Results() {
                   <h5 className="card-title">{car.make} {car.model}</h5>
                   <ul className="list-unstyled small">
                     <li>Letnik: {car.first_registration}</li>
-                    <li>Kilometri: {car.mileage.toLocaleString()} km</li>
+                    <li>Kilometri: {car.mileage?.toLocaleString()} km</li>
                     <li>Gorivo: {car.fuel_type}</li>
-                    <li>Menjalnik: {car.shifter_type}</li>
-                    <li>Moč: {car.engine_kw} kW</li>
-                    <li>Cena: {car.price.toLocaleString()} €</li>
+                    <li>Menjalnik:&nbsp; 
+                        {car.gearbox 
+                            || (car.gearbox?.toLowerCase().includes('avtomatski') ? 'Automatic'
+                            : car.gearbox?.toLowerCase().includes('ročni') ? 'Manual'
+                            : car.gearbox || '—')}
+                    </li>
+
+                    {!car.fuel_type?.toLowerCase().includes('elektro') && (
+                    <>
+                        {car.engine_kw && <li>Moč: {car.engine_kw} kW</li>}
+                        {car.engine_ccm && <li>Prostornina: {car.engine_ccm} cm³</li>}
+                    </>
+                    )}
+
+                    {car.battery && <li>Baterija: {car.battery} kWh</li>}
+                    <li>Cena: {car.price?.toLocaleString()} €</li>
                   </ul>
-                  <a href={car.link} target="_blank" rel="noreferrer" className="btn btn-primary w-100">Poglej oglas</a>
+                  {car.link && (
+                    <a href={car.link} target="_blank" rel="noreferrer" className="btn btn-primary w-100">
+                      Poglej oglas
+                    </a>
+                  )}
                 </div>
               </div>
             </div>

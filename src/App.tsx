@@ -37,46 +37,23 @@ function App() {
           <h1 className="h4 m-0">AvtoPrimerjalnik</h1>
 
           <div className="d-flex align-items-center gap-2">
-            {/* Language dropdown */}
-            <div className="dropdown">
-              <button
-                className="btn btn-outline-light dropdown-toggle"
-                type="button"
-                id="languageDropdown"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                🌐 Jezik
-              </button>
-              <ul
-                className="dropdown-menu dropdown-menu-end"
-                aria-labelledby="languageDropdown"
-              >
-                <li>
-                  <button className="dropdown-item">Slovenščina</button>
-                </li>
-                <li>
-                  <button className="dropdown-item">English</button>
-                </li>
-                <li>
-                  <button className="dropdown-item">Deutsch</button>
-                </li>
-              </ul>
-            </div>
 
             {/* Login/Logout button */}
             {user ? (
-              <button
-                className="btn btn-outline-light"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            ) : (
-              <Link to="/login" className="btn btn-outline-light">
-                Login
-              </Link>
-            )}
+  <button className="btn btn-outline-light" onClick={handleLogout}>
+    Logout
+  </button>
+) : (
+  <>
+    <Link to="/login" className="btn btn-outline-light">
+      Login
+    </Link>
+    <Link to="/register" className="btn btn-outline-light">
+      Register
+    </Link>
+  </>
+)}
+
           </div>
         </div>
       </header>
