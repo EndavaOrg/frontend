@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import UsersList from './pages/UserList';
+import Results from './pages/Results';  
 
 import { getAuth, onAuthStateChanged, signOut, type User } from 'firebase/auth';
 
@@ -86,9 +87,9 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/userList" element={<UsersList />} /> 
-        {/* Delete this userList it is for testing the auth token ty*/}
+       
 
-          {/* <Route path="/results" element={<Results />} /> */}
+          <Route path="/results" element={<Results />} />
         </Routes>
       </main>
 
