@@ -9,8 +9,29 @@ interface Props {
   isActive?: boolean;
 }
 
-const makes = ['Audi', 'BMW', 'Mercedes', 'Toyota', 'Volkswagen', 'Ford'];
-const models = ['A4', 'A6', 'Golf', 'Passat', 'Yaris', 'C-Class', 'Focus'];
+const makes = [
+  'Audi', 'BMW', 'Mercedes-Benz', 'Toyota', 'Volkswagen', 'Ford', 'Chevrolet', 'Honda', 'Hyundai', 'Kia',
+  'Nissan', 'Mazda', 'Subaru', 'Volvo', 'Peugeot', 'Renault', 'Skoda', 'Seat', 'Fiat', 'Jeep',
+  'Lexus', 'Mini', 'Opel', 'Citroën', 'Mitsubishi', 'Suzuki', 'Dacia', 'Tesla', 'Porsche', 'Jaguar',
+  'Alfa Romeo', 'Land Rover', 'Chrysler', 'Dodge', 'Buick', 'Cadillac', 'GMC', 'Infiniti', 'Acura', 'Genesis',
+  'Lincoln', 'RAM', 'Saab', 'Smart', 'Polestar', 'Rivian', 'Lucid', 'BYD', 'Great Wall', 'Chery'
+];
+
+const models = [
+  'A1', 'A3', 'A4', 'A5', 'A6', 'Q3', 'Q5', 'Q7', '3 Series', '5 Series',
+  'X1', 'X3', 'X5', 'C-Class', 'E-Class', 'S-Class', 'GLA', 'GLC', 'Corolla', 'Yaris',
+  'Camry', 'RAV4', 'Prius', 'Golf', 'Passat', 'Tiguan', 'Polo', 'Focus', 'Fiesta', 'Mustang',
+  'F-150', 'Silverado', 'Cruze', 'Malibu', 'Civic', 'Accord', 'CR-V', 'HR-V', 'Elantra', 'Tucson',
+  'Sportage', 'Sorento', 'Altima', 'Sentra', 'Leaf', 'CX-5', 'CX-30', 'Impreza', 'Forester', 'Outback',
+  'XC40', 'XC60', 'XC90', '208', '308', '3008', 'Clio', 'Megane', 'Kadjar', 'Octavia',
+  'Fabia', 'Kodiaq', 'Leon', 'Ibiza', '500', 'Panda', 'Renegade', 'Compass', 'UX', 'RX',
+  'NX', 'Cooper', 'Astra', 'Corsa', 'Berlingo', 'C4', 'ASX', 'Outlander', 'Vitara', 'Swift',
+  'Duster', 'Sandero', 'Model 3', 'Model Y', 'Model S', '911', 'Cayenne', 'Macan', 'F-Pace', 'XE',
+  'Giulia', 'Stelvio', 'Defender', 'Discovery', '300C', 'Charger', 'Challenger', 'Encore', 'Enclave', 'Escalade',
+  'Terrain', 'QX50', 'Q50', 'TLX', 'MDX', 'GV70', 'GV80', 'Corsair', 'Navigator', 'RAM 1500',
+  '9-3', 'Fortwo', '1', '2', '3', 'Air', 'Han', 'Tang', 'Ora Funky Cat', 'Tiggo 7 Pro'
+];
+
 const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i);
 const mileageRanges = [[0, 5000], [5000, 10000], [10000, 20000], [20000, 50000], [50000, 100000], [100000, 150000], [150000, 200000]];
 const priceRanges = [500, 2000, 5000, 10000, 20000, 30000, 50000, 75000, 100000, 150000, 200000, 300000];
