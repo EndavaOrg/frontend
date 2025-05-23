@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getAuth, type User } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 
 interface CarPreferences {
   make: string;
@@ -11,7 +11,7 @@ interface CarPreferences {
   gearbox: 'manual' | 'automatic' | '';
   minEngineCCM: number | '';
   minEngineKW: number | '';
-  batteryCapacity: number | ''; // For electric cars, optional
+  batteryCapacity: number | ''; 
 }
 
 const CarPreferencesForm: React.FC = () => {
