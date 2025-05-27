@@ -30,7 +30,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
   const engineCcmRanges = [[500, 800], [801, 1200], [1201, 1600], [1601, 2000], [2001, 2500], [2501, 3000], [3001, 4000], [4001, 5000]];
 
   useEffect(() => {
-  axios.get('http://localhost:5000/api/cars/carquery/makes')
+  axios.get('https://backend-ubd7.onrender.com/api/cars/carquery/makes')
     .then(res => {
       const makesRaw = res.data?.Makes;
       if (!makesRaw) {
@@ -53,7 +53,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
     return;
   }
 
-  axios.get(`http://localhost:5000/api/cars/carquery/models?make=${form.make.toLowerCase()}`)
+  axios.get(`https://backend-ubd7.onrender.com/api/cars/carquery/models?make=${form.make.toLowerCase()}`)
     .then(res => {
       const modelsRaw = res.data?.Models;
       if (!modelsRaw) {
