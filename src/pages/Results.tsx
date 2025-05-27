@@ -23,7 +23,7 @@ export default function Results() {
       const query = new URLSearchParams(cleanedParams).toString();
 
       try {
-        const response = await fetch(`http://localhost:5000/api/cars?${query}`);
+        const response = await fetch(`https://backend-ubd7.onrender.com/api/cars?${query}`);
         const data = await response.json();
         setResults(data);
       } catch (err) {
