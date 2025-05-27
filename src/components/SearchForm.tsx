@@ -1,43 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 import { FaCarSide, FaCalendarAlt, FaTachometerAlt, FaGasPump, FaEuroSign, FaWeightHanging } from 'react-icons/fa';
 import { BsSpeedometer2 } from 'react-icons/bs';
 import { GiGearStick } from 'react-icons/gi';
-
 
 interface Props {
   onSearch: (params: any) => void;
   isActive?: boolean;
 }
-
-const makes = [
-  'Audi', 'BMW', 'Mercedes-Benz', 'Toyota', 'Volkswagen', 'Ford', 'Chevrolet', 'Honda', 'Hyundai', 'Kia',
-  'Nissan', 'Mazda', 'Subaru', 'Volvo', 'Peugeot', 'Renault', 'Skoda', 'Seat', 'Fiat', 'Jeep',
-  'Lexus', 'Mini', 'Opel', 'Citroën', 'Mitsubishi', 'Suzuki', 'Dacia', 'Tesla', 'Porsche', 'Jaguar',
-  'Alfa Romeo', 'Land Rover', 'Chrysler', 'Dodge', 'Buick', 'Cadillac', 'GMC', 'Infiniti', 'Acura', 'Genesis',
-  'Lincoln', 'RAM', 'Saab', 'Smart', 'Polestar', 'Rivian', 'Lucid', 'BYD', 'Great Wall', 'Chery'
-];
-
-const models = [
-  'A1', 'A3', 'A4', 'A5', 'A6', 'Q3', 'Q5', 'Q7', '3 Series', '5 Series',
-  'X1', 'X3', 'X5', 'C-Class', 'E-Class', 'S-Class', 'GLA', 'GLC', 'Corolla', 'Yaris',
-  'Camry', 'RAV4', 'Prius', 'Golf', 'Passat', 'Tiguan', 'Polo', 'Focus', 'Fiesta', 'Mustang',
-  'F-150', 'Silverado', 'Cruze', 'Malibu', 'Civic', 'Accord', 'CR-V', 'HR-V', 'Elantra', 'Tucson',
-  'Sportage', 'Sorento', 'Altima', 'Sentra', 'Leaf', 'CX-5', 'CX-30', 'Impreza', 'Forester', 'Outback',
-  'XC40', 'XC60', 'XC90', '208', '308', '3008', 'Clio', 'Megane', 'Kadjar', 'Octavia',
-  'Fabia', 'Kodiaq', 'Leon', 'Ibiza', '500', 'Panda', 'Renegade', 'Compass', 'UX', 'RX',
-  'NX', 'Cooper', 'Astra', 'Corsa', 'Berlingo', 'C4', 'ASX', 'Outlander', 'Vitara', 'Swift',
-  'Duster', 'Sandero', 'Model 3', 'Model Y', 'Model S', '911', 'Cayenne', 'Macan', 'F-Pace', 'XE',
-  'Giulia', 'Stelvio', 'Defender', 'Discovery', '300C', 'Charger', 'Challenger', 'Encore', 'Enclave', 'Escalade',
-  'Terrain', 'QX50', 'Q50', 'TLX', 'MDX', 'GV70', 'GV80', 'Corsair', 'Navigator', 'RAM 1500',
-  '9-3', 'Fortwo', '1', '2', '3', 'Air', 'Han', 'Tang', 'Ora Funky Cat', 'Tiggo 7 Pro'
-];
-
-const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i);
-const mileageRanges = [[0, 5000], [5000, 10000], [10000, 20000], [20000, 50000], [50000, 100000], [100000, 150000], [150000, 200000]];
-const priceRanges = [500, 2000, 5000, 10000, 20000, 30000, 50000, 75000, 100000, 150000, 200000, 300000];
-const powerRangesKw = [[20, 50], [51, 75], [76, 100], [101, 150], [151, 200], [201, 300]];
-const powerRangesHp = powerRangesKw.map(([from, to]) => [Math.round(from * 1.36), Math.round(to * 1.36)]);
-const engineCcmRanges = [[500, 800], [801, 1200], [1201, 1600], [1601, 2000], [2001, 2500], [2501, 3000], [3001, 4000], [4001, 5000]];
 
 export default function SearchForm({ onSearch, isActive = true }: Props) {
   const [form, setForm] = useState({
@@ -46,6 +16,59 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
     powerFrom: '', powerTo: '', priceFrom: '', priceTo: '',
     engineCcmFrom: '', engineCcmTo: ''
   });
+
+  const [makes, setMakes] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
+
+  const selectedPowerRanges = form.powerUnit === 'HP'
+    ? [[27, 68], [69, 102], [103, 136], [137, 204], [205, 272], [273, 408]]
+    : [[20, 50], [51, 75], [76, 100], [101, 150], [151, 200], [201, 300]];
+
+  const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i);
+  const mileageRanges = [[0, 5000], [5000, 10000], [10000, 20000], [20000, 50000], [50000, 100000], [100000, 150000], [150000, 200000]];
+  const priceRanges = [500, 2000, 5000, 10000, 20000, 30000, 50000, 75000, 100000, 150000, 200000, 300000];
+  const engineCcmRanges = [[500, 800], [801, 1200], [1201, 1600], [1601, 2000], [2001, 2500], [2501, 3000], [3001, 4000], [4001, 5000]];
+
+  useEffect(() => {
+  axios.get('http://localhost:5000/api/cars/carquery/makes')
+    .then(res => {
+      const makesRaw = res.data?.Makes;
+      if (!makesRaw) {
+        console.error("Makes data is undefined or malformed:", res.data);
+        return;
+      }
+      const makes = (makesRaw as any[]).map(m => m.make_display);
+      setMakes([...new Set(makes)].sort());
+    })
+    .catch(err => {
+      console.error("Failed to fetch car makes:", err);
+    });
+}, []);
+
+
+
+  useEffect(() => {
+  if (!form.make) {
+    setModels([]);
+    return;
+  }
+
+  axios.get(`http://localhost:5000/api/cars/carquery/models?make=${form.make.toLowerCase()}`)
+    .then(res => {
+      const modelsRaw = res.data?.Models;
+      if (!modelsRaw) {
+        console.error("Models data is undefined or malformed:", res.data);
+        return;
+      }
+      const models = (modelsRaw as any[]).map(m => m.model_name);
+      setModels([...new Set(models)].sort());
+    })
+    .catch(err => {
+      console.error("Failed to fetch car models:", err);
+    });
+}, [form.make]);
+
+
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -57,17 +80,16 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
     onSearch(form);
   };
 
-  const selectedPowerRanges = form.powerUnit === 'HP' ? powerRangesHp : powerRangesKw;
-
   return (
     <form onSubmit={handleSubmit} className={`glass-form p-4 shadow ${isActive ? '' : 'd-none'}`}>
       <div className="row g-3">
-
         <div className="col-md-6">
           <label className="form-label"><FaCarSide className="me-2" />Znamka</label>
           <select name="make" className="form-select" value={form.make} onChange={handleChange}>
             <option value="">Vse znamke</option>
-            {makes.map(make => <option key={make} value={make}>{make}</option>)}
+            {makes.map(make => (
+              <option key={make} value={make}>{make}</option>
+            ))}
           </select>
         </div>
 
@@ -75,7 +97,9 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
           <label className="form-label"><FaCarSide className="me-2" />Model</label>
           <select name="model" className="form-select" value={form.model} onChange={handleChange}>
             <option value="">Vsi modeli</option>
-            {models.map(model => <option key={model} value={model}>{model}</option>)}
+            {models.map(model => (
+              <option key={model} value={model}>{model}</option>
+            ))}
           </select>
         </div>
 
@@ -116,8 +140,6 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
 
         <div className="col-md-4">
           <label className="form-label"><GiGearStick className="me-2" />Menjalnik</label>
-
-
           <select name="shifter_type" className="form-select" value={form.shifter_type} onChange={handleChange}>
             <option value="">Izberi...</option>
             <option value="Manual">Ročni</option>
@@ -148,15 +170,11 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
           <div className="d-flex gap-2">
             <select name="engineCcmFrom" className="form-select" value={form.engineCcmFrom} onChange={handleChange}>
               <option value="">Min</option>
-              {engineCcmRanges.map(([from]) => (
-                <option key={from} value={from}>{from} cm³</option>
-              ))}
+              {engineCcmRanges.map(([from]) => <option key={from} value={from}>{from} cm³</option>)}
             </select>
             <select name="engineCcmTo" className="form-select" value={form.engineCcmTo} onChange={handleChange}>
               <option value="">Max</option>
-              {engineCcmRanges.map(([_, to]) => (
-                <option key={to} value={to}>{to} cm³</option>
-              ))}
+              {engineCcmRanges.map(([_, to]) => <option key={to} value={to}>{to} cm³</option>)}
             </select>
           </div>
         </div>
