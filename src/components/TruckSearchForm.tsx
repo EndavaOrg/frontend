@@ -49,14 +49,14 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
       return;
     }
 
-    axios.get(`${API_BASE_URL}/api/trucks/models?make=${form.make.toLowerCase()}`)
+    axios.get(`${API_BASE_URL}/api/trucks/models?make=${form.make}`)
       .then(res => {
         const modelsRaw = res.data;
         if (!modelsRaw) {
           console.error("Models data is undefined or malformed:", res.data);
           return;
         }
-      setMakes(modelsRaw.sort());
+      setModels(modelsRaw.sort());
       })
       .catch(err => {
         console.error("Failed to fetch truck models:", err);
