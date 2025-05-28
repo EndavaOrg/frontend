@@ -3,13 +3,13 @@ export interface CarListing {
   make: string;
   model: string;
   first_registration: number;
-  mileage: number;
+  mileage_km: number;
   fuel_type: string;
   gearbox: string;
   engine_kw: number;
   engine_ccm?: number;
   battery?: number;
-  price: number;
+  price_eur: number;
   link?: string;
 }
 
