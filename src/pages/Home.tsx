@@ -2,12 +2,13 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import SearchForm from '../components/SearchForm';
 import MotorcycleSearchForm from '../components/MotorcycleSearchForm';
+import TruckSearchForm from '../components/TruckSearchForm'; 
 
 export default function Home() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'car' | 'motorcycle'>('car');
+  const [activeTab, setActiveTab] = useState<'car' | 'motorcycle' | 'truck'>('car');
 
-  const handleSearch = (params: any, type: 'car' | 'motorcycle' = 'car') => {
+  const handleSearch = (params: any, type: 'car' | 'motorcycle' | 'truck' = 'car') => {
     localStorage.setItem('searchParams', JSON.stringify(params));
     localStorage.setItem('searchType', type);
     navigate('/results');
@@ -15,12 +16,11 @@ export default function Home() {
 
   return (
     <div className="container-fluid px-0">
-      {/* Hero section */}
       <section className="hero-section text-white text-center d-flex align-items-center justify-content-center">
         <div className="overlay"></div>
         <div className="content">
           <h1 className="display-4 fw-bold">Najdi svoje vozilo</h1>
-          <p className="lead">Primerjaj cene avtomobilov in motorjev z enega mesta.</p>
+          <p className="lead">Primerjaj cene avtomobilov, motorjev in tovornjakov z enega mesta.</p>
         </div>
       </section>
 
@@ -40,31 +40,33 @@ export default function Home() {
           </div>
 
           <div className="col-lg-9">
-          <div className="card p-4 shadow-sm bg-white rounded-4">
-            <div className="d-flex justify-content-center gap-3 mb-4">
-              <button
-                className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'car' ? 'active' : ''}`}
-                onClick={() => setActiveTab('car')}
-              >
-                🚗 Avtomobili
-              </button>
-              <button
-                className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'motorcycle' ? 'active' : ''}`}
-                onClick={() => setActiveTab('motorcycle')}
-              >
-                🏍 Motorji
-              </button>
+            <div className="card p-4 shadow-sm bg-white rounded-4">
+              <div className="d-flex justify-content-center gap-3 mb-4">
+                <button
+                  className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'car' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('car')}
+                >
+                  🚗 Avtomobili
+                </button>
+                <button
+                  className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'motorcycle' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('motorcycle')}
+                >
+                  🏍 Motorji
+                </button>
+                <button
+                  className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'truck' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('truck')}
+                >
+                  🚚 Tovornjaki
+                </button>
+              </div>
+
+              {activeTab === 'car' && <SearchForm onSearch={(params) => handleSearch(params, 'car')} />}
+              {activeTab === 'motorcycle' && <MotorcycleSearchForm onSearch={(params) => handleSearch(params, 'motorcycle')} />}
+              {activeTab === 'truck' && <TruckSearchForm onSearch={(params) => handleSearch(params, 'truck')} />}
             </div>
-
-            {activeTab === 'car' ? (
-              <SearchForm onSearch={(params) => handleSearch(params, 'car')} />
-            ) : (
-              <MotorcycleSearchForm onSearch={(params) => handleSearch(params, 'motorcycle')} />
-            )}
           </div>
-        </div>
-
-
         </div>
       </div>
     </div>
