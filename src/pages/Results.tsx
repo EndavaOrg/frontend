@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { CarListing } from '../types/car';
 
 export default function Results() {
   const [results, setResults] = useState<CarListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchResults = async () => {
       const rawParams = localStorage.getItem('searchParams');
+      const type = localStorage.getItem('searchType') || 'car';
       if (!rawParams) return;
 
       const parsed = JSON.parse(rawParams);
@@ -23,11 +26,11 @@ export default function Results() {
       const query = new URLSearchParams(cleanedParams).toString();
 
       try {
-        const response = await fetch(`https://backend-ubd7.onrender.com/api/cars?${query}`);
+        const response = await fetch(`https://backend-ubd7.onrender.com/api/${type}s?${query}`);
         const data = await response.json();
         setResults(data);
       } catch (err) {
-        console.error('Error fetching filtered cars:', err);
+        console.error('Error fetching filtered listings:', err);
       } finally {
         setLoading(false);
       }
@@ -39,47 +42,69 @@ export default function Results() {
   return (
     <div className="container py-5">
       <h2 className="fw-bold text-center mb-4">Rezultati iskanja</h2>
+
+      <div className="mb-3" style={{ marginTop: '-10px' }}>
+  <button
+    className="btn btn-link text-decoration-none px-0 fw-medium"
+    style={{ color: '#495057' }}
+    onClick={() => navigate('/')}
+  >
+    ← Nazaj na iskalnik
+  </button>
+</div>
+
+
       {loading ? (
         <p className="text-center">Nalagam...</p>
       ) : results.length === 0 ? (
         <p className="text-center text-muted">Ni rezultatov za podane kriterije.</p>
       ) : (
         <div className="row">
-          {results.map(car => (
-            <div key={car._id} className="col-md-4 mb-4">
-              <div className="card h-100">
-                <div className="card-body">
-                  <h5 className="card-title">{car.make} {car.model}</h5>
-                  <ul className="list-unstyled small">
-                    <li>Letnik: {car.first_registration}</li>
-                    <li>Kilometri: {car.mileage?.toLocaleString()} km</li>
-                    <li>Gorivo: {car.fuel_type}</li>
-                    <li>Menjalnik:&nbsp; 
-                        {car.gearbox 
-                            || (car.gearbox?.toLowerCase().includes('avtomatski') ? 'Automatic'
-                            : car.gearbox?.toLowerCase().includes('ročni') ? 'Manual'
-                            : car.gearbox || '—')}
-                    </li>
+          {results.map((item: any) => {
+            const isMotorcycle = !item.fuel_type && !item.gearbox;
 
-                    {!car.fuel_type?.toLowerCase().includes('elektro') && (
-                    <>
-                        {car.engine_kw && <li>Moč: {car.engine_kw} kW</li>}
-                        {car.engine_ccm && <li>Prostornina: {car.engine_ccm} cm³</li>}
-                    </>
-                    )}
-
-                    {car.battery && <li>Baterija: {car.battery} kWh</li>}
-                    <li>Cena: {car.price?.toLocaleString()} €</li>
-                  </ul>
-                  {car.link && (
-                    <a href={car.link} target="_blank" rel="noreferrer" className="btn btn-primary w-100">
-                      Poglej oglas
+            return (
+              <div key={item._id} className="col-md-6 col-lg-4 mb-4">
+                <div className="card h-100 shadow-sm">
+                  <img
+                    src={item.image_url || '/default-bike.jpg'}
+                    className="card-img-top"
+                    alt={`${item.make} ${item.model}`}
+                    style={{ height: '200px', objectFit: 'cover' }}
+                  />
+                  <div className="card-body d-flex flex-column">
+                    <h5 className="card-title">{item.make} {item.model}</h5>
+                    <ul className="list-unstyled text-muted small mb-3">
+                      <li><strong>Letnik:</strong> {item.first_registration || '—'}</li>
+                      <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
+                      {isMotorcycle ? (
+                        <>
+                          <li><strong>Stanje:</strong> {item.state || '—'}</li>
+                          <li><strong>Moč:</strong> {item.engine_kw ? `${item.engine_kw} kW (${item.engine_hp} HP)` : '—'}</li>
+                        </>
+                      ) : (
+                        <>
+                          <li><strong>Gorivo:</strong> {item.fuel_type || '—'}</li>
+                          <li><strong>Menjalnik:</strong> {item.gearbox || '—'}</li>
+                          <li><strong>Moč:</strong> {item.engine_kw ? `${item.engine_kw} kW (${item.engine_hp} HP)` : '—'}</li>
+                          {item.engine_ccm && <li><strong>Prostornina:</strong> {item.engine_ccm} ccm</li>}
+                        </>
+                      )}
+                    </ul>
+                    <h6 className="text-dark fw-bold mb-3">{item.price_eur ? `${item.price_eur.toLocaleString()} €` : '—'}</h6>
+                    <a
+                      href={item.link}
+                      className="btn btn-outline-primary mt-auto"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Ogled ponudbe
                     </a>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
