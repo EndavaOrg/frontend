@@ -172,7 +172,6 @@ footer {
   max-width: 960px;
   margin: 0 auto;
   position: relative;
-  top: -80px;
 }
 
 /* Add subtle floating effect on hover */
@@ -192,6 +191,30 @@ footer {
 .animate-fade:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+/* Ensure toggle buttons show above other content */
+.btn-outline-dark {
+  position: relative;
+  z-index: 10;
+}
+
+.glass-form {
+  position: relative;
+  z-index: 1;
+}
+
+.btn-outline-dark.active {
+  background-color: var(--dark-color);
+  color: white;
+  border-color: var(--dark-color);
+}
+
+.card {
+  background-color: #ffffff;
+}
+
+
+
 
 
 /* 🎬 Animations */

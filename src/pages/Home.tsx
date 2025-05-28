@@ -1,22 +1,26 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import SearchForm from '../components/SearchForm';
+import MotorcycleSearchForm from '../components/MotorcycleSearchForm';
 
 export default function Home() {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'car' | 'motorcycle'>('car');
 
-  const handleSearch = (params: any) => {
+  const handleSearch = (params: any, type: 'car' | 'motorcycle' = 'car') => {
     localStorage.setItem('searchParams', JSON.stringify(params));
+    localStorage.setItem('searchType', type);
     navigate('/results');
   };
 
   return (
     <div className="container-fluid px-0">
-      {/* Hero section + sidebar + search form */}
+      {/* Hero section */}
       <section className="hero-section text-white text-center d-flex align-items-center justify-content-center">
         <div className="overlay"></div>
         <div className="content">
-          <h1 className="display-4 fw-bold">Najdi svoj naslednji avto</h1>
-          <p className="lead">Primerjaj cene, lastnosti in pogoje prodaje iz različnih virov.</p>
+          <h1 className="display-4 fw-bold">Najdi svoje vozilo</h1>
+          <p className="lead">Primerjaj cene avtomobilov in motorjev z enega mesta.</p>
         </div>
       </section>
 
@@ -36,8 +40,31 @@ export default function Home() {
           </div>
 
           <div className="col-lg-9">
-            <SearchForm onSearch={handleSearch} />
+          <div className="card p-4 shadow-sm bg-white rounded-4">
+            <div className="d-flex justify-content-center gap-3 mb-4">
+              <button
+                className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'car' ? 'active' : ''}`}
+                onClick={() => setActiveTab('car')}
+              >
+                🚗 Avtomobili
+              </button>
+              <button
+                className={`btn btn-outline-dark px-4 py-2 fw-bold ${activeTab === 'motorcycle' ? 'active' : ''}`}
+                onClick={() => setActiveTab('motorcycle')}
+              >
+                🏍 Motorji
+              </button>
+            </div>
+
+            {activeTab === 'car' ? (
+              <SearchForm onSearch={(params) => handleSearch(params, 'car')} />
+            ) : (
+              <MotorcycleSearchForm onSearch={(params) => handleSearch(params, 'motorcycle')} />
+            )}
           </div>
+        </div>
+
+
         </div>
       </div>
     </div>

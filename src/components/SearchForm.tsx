@@ -24,7 +24,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
     ? [[27, 68], [69, 102], [103, 136], [137, 204], [205, 272], [273, 408]]
     : [[20, 50], [51, 75], [76, 100], [101, 150], [151, 200], [201, 300]];
 
-  const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i);
+  const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i).reverse();
   const mileageRanges = [[0, 5000], [5000, 10000], [10000, 20000], [20000, 50000], [50000, 100000], [100000, 150000], [150000, 200000]];
   const priceRanges = [500, 2000, 5000, 10000, 20000, 30000, 50000, 75000, 100000, 150000, 200000, 300000];
   const engineCcmRanges = [[500, 800], [801, 1200], [1201, 1600], [1601, 2000], [2001, 2500], [2501, 3000], [3001, 4000], [4001, 5000]];
