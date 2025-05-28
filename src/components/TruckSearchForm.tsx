@@ -26,21 +26,22 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
   const axleCounts = [2, 3, 4, 5, 6, 7, 8];
   const priceRanges = [1000, 5000, 10000, 20000, 50000, 75000, 100000, 150000, 200000];
 
-  useEffect(() => {
-    axios.get(`${API_BASE_URL}/api/trucks/makes`)
-      .then(res => {
-        const makesRaw = res.data?.Makes;
-        if (!makesRaw) {
-          console.error("Makes data is undefined or malformed:", res.data);
-          return;
-        }
-        const makes = (makesRaw as any[]).map(m => m.make_display);
-        setMakes([...new Set(makes)].sort());
-      })
-      .catch(err => {
-        console.error("Failed to fetch truck makes:", err);
-      });
-  }, []);
+ useEffect(() => {
+  axios.get(`${API_BASE_URL}/api/trucks/makes`)
+    .then(res => {
+      const makesRaw = res.data;
+      console.log(makesRaw);
+      if (!makesRaw) {
+        console.error("Makes data is undefined or malformed:", res.data);
+        return;
+      }
+      setMakes(makesRaw.sort());
+    })
+    .catch(err => {
+      console.error("Failed to fetch truck makes:", err);
+    });
+}, []);
+
 
   useEffect(() => {
     if (!form.make) {
@@ -50,13 +51,12 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
 
     axios.get(`${API_BASE_URL}/api/trucks/models?make=${form.make.toLowerCase()}`)
       .then(res => {
-        const modelsRaw = res.data?.Models;
+        const modelsRaw = res.data;
         if (!modelsRaw) {
           console.error("Models data is undefined or malformed:", res.data);
           return;
         }
-        const models = (modelsRaw as any[]).map(m => m.model_name);
-        setModels([...new Set(models)].sort());
+      setMakes(modelsRaw.sort());
       })
       .catch(err => {
         console.error("Failed to fetch truck models:", err);
