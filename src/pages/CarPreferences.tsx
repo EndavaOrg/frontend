@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getAuth } from "firebase/auth";
+import { useNavigate } from 'react-router-dom';
 
 interface CarPreferences {
   make: string;
@@ -11,7 +12,7 @@ interface CarPreferences {
   gearbox: 'manual' | 'automatic' | '';
   minEngineCCM: number | '';
   minEngineKW: number | '';
-  batteryCapacity: number | ''; 
+  batteryCapacity: number | '';
 }
 
 const CarPreferencesForm: React.FC = () => {
@@ -48,35 +49,47 @@ const CarPreferencesForm: React.FC = () => {
     console.log('Sending cleaned preferences:', cleanedPreferences);
     const auth = getAuth();
     const user = auth.currentUser;
-    
+
     if (!user) {
       alert("User is not logged in");
       return;
     }
-    
+
     const token = await user.getIdToken();
-    const userId = user?.uid; 
+    const userId = user?.uid;
     try {
-        const res = await fetch(`${API_BASE_URL}/api/users/${userId}/preferences`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ preferences: cleanedPreferences }),
-          });
-          
+      const res = await fetch(`${API_BASE_URL}/api/users/${userId}/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ preferences: cleanedPreferences }),
+      });
+
       if (!res.ok) throw new Error('Something went wrong');
 
       alert('Preference shranjene uspešno!');
+      navigate('/');
+
     } catch (err) {
       console.error(err);
       alert('Napaka pri shranjevanju preferenc.');
     }
   };
+  const navigate = useNavigate();
+
+  const skipPreferences = () => {
+    navigate('/');
+  };
 
   return (
     <div className="container my-5 p-4 bg-light rounded shadow-sm" style={{ maxWidth: 600 }}>
+      <div className="d-flex justify-content-end mb-3">
+        <button type="button" className="btn btn-outline-secondary" onClick={skipPreferences}>
+          Preskoči preference
+        </button>
+      </div>
       <h3 className="mb-4">Izberi želje glede avtomobila</h3>
       <form onSubmit={handleSubmit}>
         {/* make */}
