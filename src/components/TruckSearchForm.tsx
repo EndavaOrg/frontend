@@ -18,7 +18,7 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
 
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+  const API_BASE_URL = import.meta.env.production.VITE_BACKEND_API_URL;
 
   const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i).reverse();
   const mileageRanges = [[0, 50000], [50000, 100000], [100000, 200000], [200000, 400000], [400000, 600000], [600000, 800000], [800000, 1000000]];

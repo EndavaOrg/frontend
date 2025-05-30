@@ -14,7 +14,7 @@ export default function Results() {
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
-    const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+    const API_BASE_URL = import.meta.env.production.VITE_BACKEND_API_URL;
 
     const rawParams = localStorage.getItem('searchParams');
     const type = localStorage.getItem('searchType') || 'car'; // 'car' | 'motorcycle' | 'truck' etc.
