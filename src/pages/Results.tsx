@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import type { Car, Motorcycle, Truck, Vehicle } from '../types/car';
 
 type SortOrder = 'none' | 'price-asc' | 'price-desc' | 'mileage-asc' | 'mileage-desc';
-
 type VehicleType = Car | Motorcycle | Truck | Vehicle;
 
 export default function Results() {
@@ -16,19 +15,43 @@ export default function Results() {
     setLoading(true);
     const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
+    const rawAiResults = localStorage.getItem('aiResults');
+
+    if (rawAiResults) {
+  try {
+    const parsed = JSON.parse(rawAiResults);
+    const resultsArray = Array.isArray(parsed) ? parsed : [parsed];
+    console.log("✅ AI Results from localStorage:", resultsArray);
+    setResults(resultsArray);
+    
+    // Delay cleanup slightly to allow proper rendering
+    setTimeout(() => {
+  localStorage.removeItem('aiResults');
+  localStorage.removeItem('searchParams'); // 🧼 Clear old filters
+}, 1000);
+ // 1 second is enough
+  } catch (err) {
+    console.error("❌ Failed to parse aiResults from localStorage", err);
+    setResults([]);
+  }
+  setLoading(false);
+  return;
+}
+
+
     const rawParams = localStorage.getItem('searchParams');
-    const type = localStorage.getItem('searchType') || 'car'; // 'car' | 'motorcycle' | 'truck' etc.
+    const type = localStorage.getItem('searchType') || 'car';
 
     if (!rawParams) {
       setLoading(false);
       return;
     }
 
-    const parsed = JSON.parse(rawParams);
+    const parsedParams = JSON.parse(rawParams);
     const cleanedParams: Record<string, string> = {};
 
-    for (const key in parsed) {
-      const value = parsed[key];
+    for (const key in parsedParams) {
+      const value = parsedParams[key];
       if (value !== '' && value !== null && value !== undefined) {
         cleanedParams[key] = value;
       }
@@ -52,7 +75,6 @@ export default function Results() {
     fetchResults();
   }, [fetchResults]);
 
-  // Sorting the results array based on selected sort order
   const sortedResults = [...results].sort((a, b) => {
     switch (sortOrder) {
       case 'price-asc':
@@ -68,7 +90,6 @@ export default function Results() {
     }
   });
 
-  // Type guards to detect vehicle type at runtime:
   const isCar = (v: VehicleType): v is Car =>
     'fuel_type' in v && 'gearbox' in v && 'engine_kw' in v;
 
@@ -114,8 +135,8 @@ export default function Results() {
         <p className="text-center text-muted">Ni rezultatov za podane kriterije.</p>
       ) : (
         <div className="row">
-          {sortedResults.map((item) => (
-            <div key={item._id} className="col-md-6 col-lg-4 mb-4">
+          {sortedResults.map((item, index) => (
+            <div key={(item as any)._id ?? `${item.make}-${item.model}-${index}`} className="col-md-6 col-lg-4 mb-4">
               <div className="card h-100 shadow-sm">
                 <img
                   src={item.image_url || 'https://placehold.co/400x200/cccccc/333333?text=Ni+slike'}
@@ -129,25 +150,28 @@ export default function Results() {
                 <div className="card-body d-flex flex-column">
                   <h5 className="card-title">{item.make} {item.model}</h5>
                   <ul className="list-unstyled text-muted small mb-3">
-                    <li><strong>Letnik:</strong> {item.first_registration ?? item.Year ?? '—'}</li>
+                    <li><strong>Letnik:</strong> {item.first_registration ?? (item as any).year ?? '—'}</li>
                     <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
+
                     {isCar(item) && (
                       <>
                         <li><strong>Gorivo:</strong> {item.fuel_type}</li>
                         <li><strong>Menjalnik:</strong> {item.gearbox}</li>
                         <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
                         {item.engine_ccm && <li><strong>Prostornina:</strong> {item.engine_ccm} ccm</li>}
-                        {item.battery_kwh !== undefined && item.battery_kwh !== null && (
+                        {item.battery_kwh != null && (
                           <li><strong>Kapaciteta baterije:</strong> {item.battery_kwh} kWh</li>
                         )}
                       </>
                     )}
+
                     {isMotorcycle(item) && (
                       <>
                         <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
                         <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
                       </>
                     )}
+
                     {isTruck(item) && (
                       <>
                         <li><strong>Gorivo:</strong> {item.fuel_type}</li>
@@ -155,11 +179,17 @@ export default function Results() {
                         <li><strong>Letnik:</strong> {item.year}</li>
                       </>
                     )}
+
                     {!isCar(item) && !isMotorcycle(item) && !isTruck(item) && (
-                      <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
+                      <>
+                        <li><strong>Moč:</strong> {(item as any).engine_kw ?? '—'} kW</li>
+                        <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
+                      </>
                     )}
                   </ul>
-                  <h6 className="text-dark fw-bold mb-3">{item.price_eur ? `${item.price_eur.toLocaleString()} €` : '—'}</h6>
+                  <h6 className="text-dark fw-bold mb-3">
+                    {item.price_eur ? `${item.price_eur.toLocaleString()} €` : '—'}
+                  </h6>
                   <a
                     href={item.link}
                     className="btn btn-outline-primary mt-auto"
