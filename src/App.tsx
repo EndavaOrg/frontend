@@ -4,7 +4,8 @@ import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import UsersList from './pages/UserList';
-import Results from './pages/Results';  
+import Results from './pages/Results';
+import Watchlist from './pages/Watchlist';  
 
 import { getAuth, onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import CarPreferencesForm from './pages/CarPreferences';
@@ -12,6 +13,7 @@ import CarPreferencesForm from './pages/CarPreferences';
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const auth = getAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -19,8 +21,6 @@ function App() {
     });
     return unsubscribe;
   }, [auth]);
-
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -39,22 +39,23 @@ function App() {
 
           <div className="d-flex align-items-center gap-2">
 
-            {/* Login/Logout button */}
+            <Link to="/watchlist" className="btn btn-outline-warning" title="Watchlist">
+              ⭐
+            </Link>
             {user ? (
-  <button className="btn btn-outline-light" onClick={handleLogout}>
-    Logout
-  </button>
-) : (
-  <>
-    <Link to="/login" className="btn btn-outline-light">
-      Login
-    </Link>
-    <Link to="/register" className="btn btn-outline-light">
-      Register
-    </Link>
-  </>
-)}
-
+              <button className="btn btn-outline-light" onClick={handleLogout}>
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link to="/login" className="btn btn-outline-light">
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-outline-light">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -64,11 +65,10 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/userList" element={<UsersList />} /> 
+          <Route path="/userList" element={<UsersList />} />
           <Route path="/preferences" element={<CarPreferencesForm />} />
-
-
           <Route path="/results" element={<Results />} />
+          <Route path="/watchlist" element={<Watchlist />} /> 
         </Routes>
       </main>
 

@@ -28,5 +28,11 @@ export interface Motorcycle extends Vehicle {
 export interface Truck extends Vehicle {
   fuel_type: string;
   gearbox: string;
-  year: number;
+  first_registration: number;
+  mileage_km?: number;
+  engine_ccm?: number;
+  engine_kw?: number;
+  engine_hp?: number;
+  state?: string;
 }
+

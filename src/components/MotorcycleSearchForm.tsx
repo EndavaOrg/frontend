@@ -16,6 +16,11 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
 
+  const [resultCount, setResultCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
+
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+
   const powerRanges = form.powerUnit === 'HP'
     ? [[10, 30], [31, 70], [71, 100], [101, 150]]
     : [[7, 22], [23, 50], [51, 75], [76, 110]];
@@ -25,7 +30,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
   const priceRanges = [500, 1000, 2000, 4000, 7000, 10000, 15000, 20000];
 
   useEffect(() => {
-    axios.get('https://backend-ubd7.onrender.com/api/motorcycles/makes')
+    axios.get(`${API_BASE_URL}/api/motorcycles/makes`)
       .then(res => setMakes(res.data || []))
       .catch(err => console.error("Failed to fetch motorcycle makes:", err));
   }, []);
@@ -35,10 +40,44 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
       setModels([]);
       return;
     }
-    axios.get(`https://backend-ubd7.onrender.com/api/motorcycles/models?make=${form.make}`)
+    axios.get(`${API_BASE_URL}/api/motorcycles/models?make=${form.make}`)
       .then(res => setModels(res.data || []))
       .catch(err => console.error("Failed to fetch motorcycle models:", err));
   }, [form.make]);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      setCountLoading(true);
+      try {
+        const cleanedParams: Record<string, string> = {};
+        for (const key in form) {
+          const value = (form as any)[key];
+          if (value !== '' && value !== null && value !== undefined) {
+            cleanedParams[key] = value;
+          }
+        }
+
+        if (cleanedParams.yearFrom) cleanedParams.first_registration = cleanedParams.yearFrom;
+        if (cleanedParams.powerFrom) cleanedParams.engineKwFrom = cleanedParams.powerUnit === 'HP'
+          ? Math.round(Number(cleanedParams.powerFrom) / 1.36).toString()
+          : cleanedParams.powerFrom;
+        if (cleanedParams.powerTo) cleanedParams.engineKwTo = cleanedParams.powerUnit === 'HP'
+          ? Math.round(Number(cleanedParams.powerTo) / 1.36).toString()
+          : cleanedParams.powerTo;
+
+        const query = new URLSearchParams(cleanedParams).toString();
+        const response = await axios.get(`${API_BASE_URL}/api/motorcycles?${query}`);
+        setResultCount(response.data.length);
+      } catch (err) {
+        console.error('Failed to fetch count:', err);
+        setResultCount(null);
+      } finally {
+        setCountLoading(false);
+      }
+    };
+
+    fetchCount();
+  }, [form]);
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -137,7 +176,9 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
       </div>
 
       <div className="text-center mt-4">
-        <button className="btn btn-dark px-5 py-2">Išči</button>
+        <button type="submit" className="btn btn-dark px-5 py-2">
+          {countLoading ? 'Nalagam...' : resultCount !== null ? `${resultCount} rezultatov` : '🔍 Išči'}
+        </button>
       </div>
     </form>
   );

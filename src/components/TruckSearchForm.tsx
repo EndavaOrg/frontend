@@ -11,37 +11,26 @@ interface Props {
 export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
   const [form, setForm] = useState({
     make: '', model: '', yearFrom: '', mileageFrom: '', mileageTo: '',
-    fuel_type: '', shifter_type: '', loadCapacityFrom: '', loadCapacityTo: '',
-    axleCount: '', priceFrom: '', priceTo: '',
+    fuel_type: '', gearbox: '', priceFrom: '', priceTo: ''
   });
 
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
 
+  const [resultCount, setResultCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
+
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
   const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i).reverse();
   const mileageRanges = [[0, 50000], [50000, 100000], [100000, 200000], [200000, 400000], [400000, 600000], [600000, 800000], [800000, 1000000]];
-  const loadCapacityRanges = [[0, 3000], [3001, 6000], [6001, 9000], [9001, 12000], [12001, 16000], [16001, 20000]];
-  const axleCounts = [2, 3, 4, 5, 6, 7, 8];
   const priceRanges = [1000, 5000, 10000, 20000, 50000, 75000, 100000, 150000, 200000];
 
- useEffect(() => {
-  axios.get(`${API_BASE_URL}/api/trucks/makes`)
-    .then(res => {
-      const makesRaw = res.data;
-      console.log(makesRaw);
-      if (!makesRaw) {
-        console.error("Makes data is undefined or malformed:", res.data);
-        return;
-      }
-      setMakes(makesRaw.sort());
-    })
-    .catch(err => {
-      console.error("Failed to fetch truck makes:", err);
-    });
-}, []);
-
+  useEffect(() => {
+    axios.get(`${API_BASE_URL}/api/trucks/makes`)
+      .then(res => setMakes(res.data.sort()))
+      .catch(err => console.error("Failed to fetch truck makes:", err));
+  }, []);
 
   useEffect(() => {
     if (!form.make) {
@@ -50,18 +39,37 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
     }
 
     axios.get(`${API_BASE_URL}/api/trucks/models?make=${form.make}`)
-      .then(res => {
-        const modelsRaw = res.data;
-        if (!modelsRaw) {
-          console.error("Models data is undefined or malformed:", res.data);
-          return;
-        }
-      setModels(modelsRaw.sort());
-      })
-      .catch(err => {
-        console.error("Failed to fetch truck models:", err);
-      });
+      .then(res => setModels(res.data.sort()))
+      .catch(err => console.error("Failed to fetch truck models:", err));
   }, [form.make]);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      setCountLoading(true);
+      try {
+        const cleanedParams: Record<string, string> = {};
+        for (const key in form) {
+          const value = (form as any)[key];
+          if (value !== '' && value !== null && value !== undefined) {
+            cleanedParams[key] = value;
+          }
+        }
+
+        if (cleanedParams.yearFrom) cleanedParams.first_registration = cleanedParams.yearFrom;
+
+        const query = new URLSearchParams(cleanedParams).toString();
+        const response = await axios.get(`${API_BASE_URL}/api/trucks?${query}`);
+        setResultCount(response.data.length);
+      } catch (err) {
+        console.error('Failed to fetch count:', err);
+        setResultCount(null);
+      } finally {
+        setCountLoading(false);
+      }
+    };
+
+    fetchCount();
+  }, [form]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -138,40 +146,29 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
 
         <div className="col-md-4">
           <label className="form-label"><GiGearStick className="me-2" />Menjalnik</label>
-          <select name="shifter_type" className="form-select" value={form.shifter_type} onChange={handleChange}>
+          <select name="gearbox" className="form-select" value={form.gearbox} onChange={handleChange}>
             <option value="">Izberi...</option>
-            <option value="Manual">Ročni</option>
-            <option value="Automatic">Avtomatski</option>
+            <option value="avtomatski">Avtomatski</option>
+            <option value="ročni">Ročni</option>
           </select>
         </div>
 
         <div className="col-md-4">
-          <label className="form-label">Nosilnost (kg)</label>
-          <div className="d-flex gap-2">
-            <select name="loadCapacityFrom" className="form-select" value={form.loadCapacityFrom} onChange={handleChange}>
-              <option value="">Min</option>
-              {loadCapacityRanges.map(([from]) => <option key={from} value={from}>{from.toLocaleString()} kg</option>)}
-            </select>
-            <select name="loadCapacityTo" className="form-select" value={form.loadCapacityTo} onChange={handleChange}>
-              <option value="">Max</option>
-              {loadCapacityRanges.map(([_, to]) => <option key={to} value={to}>{to.toLocaleString()} kg</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="col-md-4">
-          <label className="form-label">Število osi</label>
-          <select name="axleCount" className="form-select" value={form.axleCount} onChange={handleChange}>
-            <option value="">Izberi...</option>
-            {axleCounts.map(count => (
-              <option key={count} value={count}>{count}</option>
-            ))}
+          <label className="form-label">Gorivo</label>
+          <select name="fuel_type" className="form-select" value={form.fuel_type} onChange={handleChange}>
+            <option value="">Vse vrste</option>
+            <option value="Diesel">Diesel</option>
+            <option value="Bencin">Bencin</option>
+            <option value="Električno">Električno</option>
+            <option value="Hibrid">Hibrid</option>
           </select>
         </div>
       </div>
 
       <div className="text-center mt-4">
-        <button className="btn btn-dark px-5 py-2">🔍 Išči</button>
+        <button type="submit" className="btn btn-dark px-5 py-2">
+          {countLoading ? 'Nalagam...' : resultCount !== null ? `${resultCount} rezultatov` : '🔍 Išči'}
+        </button>
       </div>
     </form>
   );

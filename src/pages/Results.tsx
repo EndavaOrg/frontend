@@ -9,7 +9,10 @@ export default function Results() {
   const [results, setResults] = useState<VehicleType[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>('none');
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+
+  const ITEMS_PER_PAGE = 10;
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
@@ -18,26 +21,23 @@ export default function Results() {
     const rawAiResults = localStorage.getItem('aiResults');
 
     if (rawAiResults) {
-  try {
-    const parsed = JSON.parse(rawAiResults);
-    const resultsArray = Array.isArray(parsed) ? parsed : [parsed];
-    console.log("✅ AI Results from localStorage:", resultsArray);
-    setResults(resultsArray);
-    
-    // Delay cleanup slightly to allow proper rendering
-    setTimeout(() => {
-  localStorage.removeItem('aiResults');
-  localStorage.removeItem('searchParams'); // 🧼 Clear old filters
-}, 1000);
- // 1 second is enough
-  } catch (err) {
-    console.error("❌ Failed to parse aiResults from localStorage", err);
-    setResults([]);
-  }
-  setLoading(false);
-  return;
-}
+      try {
+        const parsed = JSON.parse(rawAiResults);
+        const resultsArray = Array.isArray(parsed) ? parsed : [parsed];
+        console.log("✅ AI Results from localStorage:", resultsArray);
+        setResults(resultsArray);
 
+        setTimeout(() => {
+          localStorage.removeItem('aiResults');
+          localStorage.removeItem('searchParams');
+        }, 1000);
+      } catch (err) {
+        console.error("❌ Failed to parse aiResults from localStorage", err);
+        setResults([]);
+      }
+      setLoading(false);
+      return;
+    }
 
     const rawParams = localStorage.getItem('searchParams');
     const type = localStorage.getItem('searchType') || 'car';
@@ -97,7 +97,33 @@ export default function Results() {
     !('fuel_type' in v) && !('gearbox' in v) && 'engine_kw' in v;
 
   const isTruck = (v: VehicleType): v is Truck =>
-    'fuel_type' in v && 'gearbox' in v && 'year' in v;
+    'fuel_type' in v && 'gearbox' in v && 'first_registration' in v;
+
+  const handleAddToWatchlist = (item: VehicleType) => {
+    const existing = JSON.parse(localStorage.getItem('watchlist') || '[]');
+    const exists = existing.some((x: any) => x._id === (item as any)._id);
+    if (!exists) {
+      existing.push(item);
+      localStorage.setItem('watchlist', JSON.stringify(existing));
+      alert('Dodano na seznam spremljanja!');
+    } else {
+      alert('To vozilo je že na seznamu spremljanja.');
+    }
+  };
+
+  const totalPages = Math.ceil(sortedResults.length / ITEMS_PER_PAGE);
+  const paginatedResults = sortedResults.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
   return (
     <div className="container py-5">
@@ -131,78 +157,104 @@ export default function Results() {
 
       {loading ? (
         <p className="text-center">Nalagam...</p>
-      ) : sortedResults.length === 0 ? (
+      ) : paginatedResults.length === 0 ? (
         <p className="text-center text-muted">Ni rezultatov za podane kriterije.</p>
       ) : (
-        <div className="row">
-          {sortedResults.map((item, index) => (
-            <div key={(item as any)._id ?? `${item.make}-${item.model}-${index}`} className="col-md-6 col-lg-4 mb-4">
-              <div className="card h-100 shadow-sm">
-                <img
-                  src={item.image_url || 'https://placehold.co/400x200/cccccc/333333?text=Ni+slike'}
-                  className="card-img-top"
-                  alt={`${item.make} ${item.model}`}
-                  style={{ height: '200px', objectFit: 'cover' }}
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://placehold.co/400x200/cccccc/333333?text=Ni+slike';
-                  }}
-                />
-                <div className="card-body d-flex flex-column">
-                  <h5 className="card-title">{item.make} {item.model}</h5>
-                  <ul className="list-unstyled text-muted small mb-3">
-                    <li><strong>Letnik:</strong> {item.first_registration ?? (item as any).year ?? '—'}</li>
-                    <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
+        <>
+          <div className="row">
+            {paginatedResults.map((item, index) => (
+              <div key={(item as any)._id ?? `${item.make}-${item.model}-${index}`} className="col-md-6 col-lg-4 mb-4">
+                <div className="card h-100 shadow-sm">
+                  <img
+                    src={item.image_url || 'https://placehold.co/400x200/cccccc/333333?text=Ni+slike'}
+                    className="card-img-top"
+                    alt={`${item.make} ${item.model}`}
+                    style={{ height: '200px', objectFit: 'cover' }}
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://placehold.co/400x200/cccccc/333333?text=Ni+slike';
+                    }}
+                  />
+                  <div className="card-body d-flex flex-column">
+                    <h5 className="card-title d-flex justify-content-between align-items-center">
+                      {item.make} {item.model}
+                      <button
+                        className="btn btn-sm btn-outline-warning ms-2"
+                        title="Dodaj na seznam spremljanja"
+                        onClick={() => handleAddToWatchlist(item)}
+                      >
+                        ⭐
+                      </button>
+                    </h5>
+                    <ul className="list-unstyled text-muted small mb-3">
+                      <li><strong>Letnik:</strong> {item.first_registration ?? (item as any).year ?? '—'}</li>
+                      <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
 
-                    {isCar(item) && (
-                      <>
-                        <li><strong>Gorivo:</strong> {item.fuel_type}</li>
-                        <li><strong>Menjalnik:</strong> {item.gearbox}</li>
-                        <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
-                        {item.engine_ccm && <li><strong>Prostornina:</strong> {item.engine_ccm} ccm</li>}
-                        {item.battery_kwh != null && (
-                          <li><strong>Kapaciteta baterije:</strong> {item.battery_kwh} kWh</li>
-                        )}
-                      </>
-                    )}
+                      {isCar(item) && (
+                        <>
+                          <li><strong>Gorivo:</strong> {item.fuel_type}</li>
+                          <li><strong>Menjalnik:</strong> {item.gearbox}</li>
+                          <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
+                          {item.engine_ccm && <li><strong>Prostornina:</strong> {item.engine_ccm} ccm</li>}
+                          {item.battery_kwh != null && (
+                            <li><strong>Kapaciteta baterije:</strong> {item.battery_kwh} kWh</li>
+                          )}
+                        </>
+                      )}
 
-                    {isMotorcycle(item) && (
-                      <>
-                        <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
-                        <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
-                      </>
-                    )}
+                      {isMotorcycle(item) && (
+                        <>
+                          <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
+                          <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
+                        </>
+                      )}
 
-                    {isTruck(item) && (
-                      <>
-                        <li><strong>Gorivo:</strong> {item.fuel_type}</li>
-                        <li><strong>Menjalnik:</strong> {item.gearbox}</li>
-                        <li><strong>Letnik:</strong> {item.year}</li>
-                      </>
-                    )}
-
-                    {!isCar(item) && !isMotorcycle(item) && !isTruck(item) && (
-                      <>
-                        <li><strong>Moč:</strong> {(item as any).engine_kw ?? '—'} kW</li>
-                        <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
-                      </>
-                    )}
-                  </ul>
-                  <h6 className="text-dark fw-bold mb-3">
-                    {item.price_eur ? `${item.price_eur.toLocaleString()} €` : '—'}
-                  </h6>
-                  <a
-                    href={item.link}
-                    className="btn btn-outline-primary mt-auto"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Ogled ponudbe
-                  </a>
+                      {isTruck(item) && (
+                        <>
+                          <li><strong>Letnik:</strong> {item.first_registration ?? '—'}</li>
+                          <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
+                          <li><strong>Gorivo:</strong> {item.fuel_type ?? '—'}</li>
+                          <li><strong>Menjalnik:</strong> {item.gearbox ?? '—'}</li>
+                          <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>
+                          {item.engine_ccm && <li><strong>Prostornina:</strong> {item.engine_ccm} ccm</li>}
+                          <li><strong>Stanje:</strong> {item.state ?? '—'}</li>
+                        </>
+                      )}
+                    </ul>
+                    <h6 className="text-dark fw-bold mb-3">
+                      {item.price_eur ? `${item.price_eur.toLocaleString()} €` : '—'}
+                    </h6>
+                    <a
+                      href={item.link}
+                      className="btn btn-outline-primary mt-auto"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Ogled ponudbe
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          <div className="d-flex justify-content-center align-items-center gap-2 mt-4">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={handlePrevPage}
+              disabled={currentPage === 1}
+            >
+              ← Prejšnja
+            </button>
+            <span>Stran {currentPage} / {totalPages}</span>
+            <button
+              className="btn btn-outline-secondary"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+            >
+              Naslednja →
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

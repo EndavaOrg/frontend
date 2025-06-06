@@ -20,6 +20,11 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
   const [makes, setMakes] = useState<string[]>([]);
   const [models, setModels] = useState<string[]>([]);
 
+  const [resultCount, setResultCount] = useState<number | null>(null);
+  const [countLoading, setCountLoading] = useState(false);
+
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+
   const selectedPowerRanges = form.powerUnit === 'HP'
     ? [[27, 68], [69, 102], [103, 136], [137, 204], [205, 272], [273, 408]]
     : [[20, 50], [51, 75], [76, 100], [101, 150], [151, 200], [201, 300]];
@@ -30,45 +35,76 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
   const engineCcmRanges = [[500, 800], [801, 1200], [1201, 1600], [1601, 2000], [2001, 2500], [2501, 3000], [3001, 4000], [4001, 5000]];
 
   useEffect(() => {
-  axios.get('https://backend-ubd7.onrender.com/api/cars/carquery/makes')
-    .then(res => {
-      const makesRaw = res.data?.Makes;
-      if (!makesRaw) {
-        console.error("Makes data is undefined or malformed:", res.data);
-        return;
-      }
-      const makes = (makesRaw as any[]).map(m => m.make_display);
-      setMakes([...new Set(makes)].sort());
-    })
-    .catch(err => {
-      console.error("Failed to fetch car makes:", err);
-    });
-}, []);
-
-
+    axios.get(`${API_BASE_URL}/api/cars/carquery/makes`)
+      .then(res => {
+        const makesRaw = res.data?.Makes;
+        if (!makesRaw) {
+          console.error("Makes data is undefined or malformed:", res.data);
+          return;
+        }
+        const makes = (makesRaw as any[]).map(m => m.make_display);
+        setMakes([...new Set(makes)].sort());
+      })
+      .catch(err => {
+        console.error("Failed to fetch car makes:", err);
+      });
+  }, []);
 
   useEffect(() => {
-  if (!form.make) {
-    setModels([]);
-    return;
-  }
+    if (!form.make) {
+      setModels([]);
+      return;
+    }
 
-  axios.get(`https://backend-ubd7.onrender.com/api/cars/carquery/models?make=${form.make.toLowerCase()}`)
-    .then(res => {
-      const modelsRaw = res.data?.Models;
-      if (!modelsRaw) {
-        console.error("Models data is undefined or malformed:", res.data);
-        return;
+    axios.get(`${API_BASE_URL}/api/cars/carquery/models?make=${form.make.toLowerCase()}`)
+      .then(res => {
+        const modelsRaw = res.data?.Models;
+        if (!modelsRaw) {
+          console.error("Models data is undefined or malformed:", res.data);
+          return;
+        }
+        const models = (modelsRaw as any[]).map(m => m.model_name);
+        setModels([...new Set(models)].sort());
+      })
+      .catch(err => {
+        console.error("Failed to fetch car models:", err);
+      });
+  }, [form.make]);
+
+  // DYNAMIC COUNT useEffect:
+  useEffect(() => {
+    const fetchCount = async () => {
+      setCountLoading(true);
+      try {
+        const cleanedParams: Record<string, string> = {};
+        for (const key in form) {
+          const value = (form as any)[key];
+          if (value !== '' && value !== null && value !== undefined) {
+            cleanedParams[key] = value;
+          }
+        }
+
+        if (cleanedParams.yearFrom) cleanedParams.first_registration = cleanedParams.yearFrom;
+        if (cleanedParams.powerFrom) cleanedParams.engineKwFrom = cleanedParams.powerUnit === 'HP'
+          ? Math.round(Number(cleanedParams.powerFrom) / 1.36).toString()
+          : cleanedParams.powerFrom;
+        if (cleanedParams.powerTo) cleanedParams.engineKwTo = cleanedParams.powerUnit === 'HP'
+          ? Math.round(Number(cleanedParams.powerTo) / 1.36).toString()
+          : cleanedParams.powerTo;
+
+        const query = new URLSearchParams(cleanedParams).toString();
+        const response = await axios.get(`${API_BASE_URL}/api/cars?${query}`);
+        setResultCount(response.data.length);
+      } catch (err) {
+        console.error('Failed to fetch count:', err);
+        setResultCount(null);
+      } finally {
+        setCountLoading(false);
       }
-      const models = (modelsRaw as any[]).map(m => m.model_name);
-      setModels([...new Set(models)].sort());
-    })
-    .catch(err => {
-      console.error("Failed to fetch car models:", err);
-    });
-}, [form.make]);
+    };
 
-
+    fetchCount();
+  }, [form]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -197,8 +233,10 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
       </div>
 
       <div className="text-center mt-4">
-        <button className="btn btn-dark px-5 py-2">🔍 Išči</button>
-      </div>
+          <button type="submit" className="btn btn-dark px-5 py-2">
+            {countLoading ? 'Nalagam...' : resultCount !== null ? `${resultCount} rezultatov` : '🔍 Išči'}
+          </button>
+        </div>
     </form>
   );
 }
