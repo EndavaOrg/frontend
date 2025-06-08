@@ -7,23 +7,18 @@
 
 Frontend repository for **Primerjalnik Cen** - a price comparison platform for cars. Built with React 19 + TypeScript and styled with Bootstrap 5.
 
-**Repository URL**: [https://github.com/FERIMaribor/frontend](https://github.com/FERIMaribor/frontend)
-
-## Features
-- Search and filter car listings
+## Feature
+- Search and filter car, motorcycle and truck listings
 - Multi-source price comparison
 - Responsive design
-- Carousel displays
 
 ## Tech Stack
 - **Framework**: React 19
 - **Language**: TypeScript 5
 - **Build Tool**: Vite 6
 - **Styling**: Bootstrap 5
-- **Routing**: React Router DOM v7
 - **HTTP Client**: Axios
-- **Carousel**: React Slick
-- **Services**: Firebase (optional)
+- **Services**: Firebase 
 
 ## Installation
 
@@ -42,3 +37,34 @@ npm install
 
 # Start development server
 npm run dev
+```
+
+Key Dependencies:
+- **react**	^19.1.0
+- **react-dom**	^19.1.0
+- **typescript**	5.8.3
+- **vite**	6.3.5
+- **bootstrap**	^5.3.6
+- **axios**	^1.9.0
+- **react-router-dom**	^7.6.0
+- **react-slick**	^0.30.3
+- **firebase**	^11.7.3
+
+Contributing: 
+
+1. Fork the repository
+
+2. Create your feature branch (git checkout -b feature/your-feature)
+
+3. Commit your changes (git commit -am 'Add some feature')
+
+4. Push to the branch (git push origin feature/your-feature)
+
+5. Open a pull request
+
+**Note**: For major changes, please open an issue first to discuss proposed changes.
+
+Support:
+
+For issues and inquiries, please contact project maintainers via GitHub repository:
+[https://github.com/FERIMaribor/frontend](https://github.com/FERIMaribor/frontend)
