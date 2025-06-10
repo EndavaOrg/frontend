@@ -71,7 +71,6 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
       });
   }, [form.make]);
 
-  // DYNAMIC COUNT useEffect:
   useEffect(() => {
     const fetchCount = async () => {
       setCountLoading(true);
