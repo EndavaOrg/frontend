@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
+// Define vehicle types
 type VehicleType = 'car' | 'motorcycle' | 'truck';
 
+// Define preference structure
 interface Preference {
   make: string;
   model: string;
@@ -18,6 +20,7 @@ interface Preference {
   battery_kwh?: number | '';
 }
 
+// Initialize an empty preference
 const getEmptyPreference = (): Preference => ({
   make: '',
   model: '',
@@ -48,21 +51,28 @@ const VehiclePreferencesForm: React.FC = () => {
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/users/${user.uid}/preferences/${type}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (Array.isArray(data.preferences)) {
-        setPreferencesList(data.preferences);
-      } else {
-        setPreferencesList([]);
-      }
+      setPreferencesList(Array.isArray(data.preferences) ? data.preferences : []);
     } catch (err) {
       console.error(err);
       setPreferencesList([]);
     }
   };
+
+  // Load preferences on mount
+ useEffect(() => {
+  const auth = getAuth();
+  const unsubscribe = auth.onAuthStateChanged(async (user) => {
+    if (user) {
+      fetchPreferences(vehicleType);
+    }
+  });
+
+  return () => unsubscribe();
+}, [vehicleType]);
+
 
   useEffect(() => {
     fetchPreferences(vehicleType);
@@ -103,10 +113,7 @@ const VehiclePreferencesForm: React.FC = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          vehicleType,
-          preferences: [cleaned],
-        }),
+        body: JSON.stringify({ vehicleType, preferences: [cleaned] }),
       });
 
       if (!res.ok) throw new Error('Shranjevanje ni uspelo');
@@ -116,6 +123,28 @@ const VehiclePreferencesForm: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert('Napaka pri shranjevanju.');
+    }
+  };
+
+  const handleDeletePreference = async (index: number) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const token = await user.getIdToken();
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${user.uid}/preferences/${vehicleType}/${index}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error('Brisanje ni uspelo');
+
+      setPreferencesList(prev => prev.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error(err);
+      alert('Napaka pri brisanju preference.');
     }
   };
 
@@ -135,7 +164,6 @@ const VehiclePreferencesForm: React.FC = () => {
 
       <div className="row">
         <div className="col-md-8">
-          {/* Vehicle type */}
           <div className="mb-3">
             <label>Tip vozila</label>
             <select className="form-select" value={vehicleType} onChange={handleVehicleTypeChange}>
@@ -145,7 +173,6 @@ const VehiclePreferencesForm: React.FC = () => {
             </select>
           </div>
 
-          {/* Main form */}
           <div className="row g-3">
             <div className="col-md-6">
               <label>Znamka</label>
@@ -168,7 +195,6 @@ const VehiclePreferencesForm: React.FC = () => {
               <input type="number" name="price_eur" className="form-control" value={currentPref.price_eur || ''} onChange={handleChange} />
             </div>
 
-            {/* Car & Truck fields */}
             {['car', 'truck'].includes(vehicleType) && (
               <>
                 <div className="col-md-6">
@@ -191,7 +217,6 @@ const VehiclePreferencesForm: React.FC = () => {
               </>
             )}
 
-            {/* Car specific */}
             {vehicleType === 'car' && (
               <>
                 <div className="col-md-4">
@@ -209,7 +234,6 @@ const VehiclePreferencesForm: React.FC = () => {
               </>
             )}
 
-            {/* Motorcycle */}
             {vehicleType === 'motorcycle' && (
               <>
                 <div className="col-md-6">
@@ -231,7 +255,6 @@ const VehiclePreferencesForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Sidebar */}
         <div className="col-md-4">
           <div className="border p-3 bg-white rounded shadow-sm">
             <h5 className="mb-3">Shranjene preference</h5>
@@ -240,8 +263,9 @@ const VehiclePreferencesForm: React.FC = () => {
             ) : (
               <ul className="list-group">
                 {preferencesList.map((pref, idx) => (
-                  <li key={idx} className="list-group-item small">
-                    <strong>{pref.make}</strong> {pref.model} ({pref.first_registration || '—'})
+                  <li key={idx} className="list-group-item small d-flex justify-content-between align-items-center">
+                    <span><strong>{pref.make}</strong> {pref.model} ({pref.first_registration || '—'})</span>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDeletePreference(idx)}>🗑️</button>
                   </li>
                 ))}
               </ul>
