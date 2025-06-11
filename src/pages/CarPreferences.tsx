@@ -1,275 +1,256 @@
-import React, { useState } from 'react';
-import { getAuth } from "firebase/auth";
+import React, { useState, useEffect } from 'react';
+import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
-interface CarPreferences {
+type VehicleType = 'car' | 'motorcycle' | 'truck';
+
+interface Preference {
   make: string;
   model: string;
-  maxPrice: number | '';
-  minYear: number | '';
-  maxMileage: number | '';
-  fuelType: 'petrol' | 'diesel' | 'electric' | '';
-  gearbox: 'manual' | 'automatic' | '';
-  minEngineCCM: number | '';
-  minEngineKW: number | '';
-  batteryCapacity: number | '';
+  first_registration?: number | '';
+  mileage_km?: number | '';
+  price_eur?: number | '';
+  fuel_type?: string;
+  gearbox?: string;
+  engine_ccm?: number | '';
+  engine_kw?: number | '';
+  engine_hp?: number | '';
+  battery_kwh?: number | '';
 }
 
-const CarPreferencesForm: React.FC = () => {
-  const [preferences, setPreferences] = useState<CarPreferences>({
-    make: '',
-    model: '',
-    maxPrice: '',
-    minYear: '',
-    maxMileage: '',
-    fuelType: '',
-    gearbox: '',
-    minEngineCCM: '',
-    minEngineKW: '',
-    batteryCapacity: '',
-  });
+const getEmptyPreference = (): Preference => ({
+  make: '',
+  model: '',
+  first_registration: '',
+  mileage_km: '',
+  price_eur: '',
+  fuel_type: '',
+  gearbox: '',
+  engine_ccm: '',
+  engine_kw: '',
+  engine_hp: '',
+  battery_kwh: '',
+});
+
+const VehiclePreferencesForm: React.FC = () => {
+  const [vehicleType, setVehicleType] = useState<VehicleType>('car');
+  const [currentPref, setCurrentPref] = useState<Preference>(getEmptyPreference());
+  const [preferencesList, setPreferencesList] = useState<Preference[]>([]);
+  const navigate = useNavigate();
+  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+
+  const fetchPreferences = async (type: VehicleType) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const token = await user.getIdToken();
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/users/${user.uid}/preferences/${type}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (Array.isArray(data.preferences)) {
+        setPreferencesList(data.preferences);
+      } else {
+        setPreferencesList([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setPreferencesList([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchPreferences(vehicleType);
+  }, [vehicleType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const parsedValue = ['maxPrice', 'minYear', 'maxMileage', 'minEngineCCM', 'minEngineKW', 'batteryCapacity'].includes(name)
+    const numericFields = [
+      'first_registration', 'mileage_km', 'price_eur',
+      'engine_ccm', 'engine_kw', 'engine_hp', 'battery_kwh'
+    ];
+    const parsedValue = numericFields.includes(name)
       ? value === '' ? '' : Number(value)
       : value;
 
-    setPreferences((prev) => ({ ...prev, [name]: parsedValue }));
+    setCurrentPref(prev => ({ ...prev, [name]: parsedValue }));
   };
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const cleanedPreferences = Object.fromEntries(
-      Object.entries(preferences).filter(([_, value]) => value !== '')
-    );
-
-    console.log('Sending cleaned preferences:', cleanedPreferences);
+  const handleAddPreference = async () => {
     const auth = getAuth();
     const user = auth.currentUser;
-
-    if (!user) {
-      alert("User is not logged in");
-      return;
-    }
+    if (!user) return alert('Uporabnik ni prijavljen.');
 
     const token = await user.getIdToken();
-    const userId = user?.uid;
+
+    const cleaned = Object.fromEntries(
+      Object.entries(currentPref).filter(([_, val]) => val !== '')
+    ) as Preference;
+
+    if (!cleaned.make && !cleaned.model) {
+      return alert('Vnesi vsaj znamko ali model.');
+    }
+
     try {
-      const res = await fetch(`${API_BASE_URL}/api/users/${userId}/preferences`, {
+      const res = await fetch(`${API_BASE_URL}/api/users/${user.uid}/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ preferences: cleanedPreferences }),
+        body: JSON.stringify({
+          vehicleType,
+          preferences: [cleaned],
+        }),
       });
 
-      if (!res.ok) throw new Error('Something went wrong');
+      if (!res.ok) throw new Error('Shranjevanje ni uspelo');
 
-      alert('Preference shranjene uspešno!');
-      navigate('/');
-
+      setPreferencesList(prev => [...prev, cleaned]);
+      setCurrentPref(getEmptyPreference());
     } catch (err) {
       console.error(err);
-      alert('Napaka pri shranjevanju preferenc.');
+      alert('Napaka pri shranjevanju.');
     }
   };
-  const navigate = useNavigate();
 
-  const skipPreferences = () => {
-    navigate('/');
+  const handleVehicleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setVehicleType(e.target.value as VehicleType);
+    setCurrentPref(getEmptyPreference());
   };
 
+  const skip = () => navigate('/');
+
   return (
-    <div className="container my-5 p-4 bg-light rounded shadow-sm" style={{ maxWidth: 600 }}>
-      <div className="d-flex justify-content-end mb-3">
-        <button type="button" className="btn btn-outline-secondary" onClick={skipPreferences}>
-          Preskoči preference
-        </button>
+    <div className="container my-4">
+      <div className="d-flex justify-content-between mb-4">
+        <h3>Tvoje preference za vozila</h3>
+        <button className="btn btn-secondary" onClick={skip}>Preskoči</button>
       </div>
-      <h3 className="mb-4">Izberi želje glede avtomobila</h3>
-      <form onSubmit={handleSubmit}>
-        {/* make */}
-        <div className="mb-3">
-          <label htmlFor="make" className="form-label">
-            Znamka <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="text"
-            id="make"
-            name="make"
-            className="form-control"
-            value={preferences.make}
-            onChange={handleChange}
-            placeholder="npr. Mercedes-Benz"
-          />
+
+      <div className="row">
+        <div className="col-md-8">
+          {/* Vehicle type */}
+          <div className="mb-3">
+            <label>Tip vozila</label>
+            <select className="form-select" value={vehicleType} onChange={handleVehicleTypeChange}>
+              <option value="car">Avtomobil</option>
+              <option value="motorcycle">Motor</option>
+              <option value="truck">Tovornjak</option>
+            </select>
+          </div>
+
+          {/* Main form */}
+          <div className="row g-3">
+            <div className="col-md-6">
+              <label>Znamka</label>
+              <input name="make" className="form-control" value={currentPref.make} onChange={handleChange} />
+            </div>
+            <div className="col-md-6">
+              <label>Model</label>
+              <input name="model" className="form-control" value={currentPref.model} onChange={handleChange} />
+            </div>
+            <div className="col-md-4">
+              <label>Letnik od</label>
+              <input type="number" name="first_registration" className="form-control" value={currentPref.first_registration || ''} onChange={handleChange} />
+            </div>
+            <div className="col-md-4">
+              <label>Prevoženi km (max)</label>
+              <input type="number" name="mileage_km" className="form-control" value={currentPref.mileage_km || ''} onChange={handleChange} />
+            </div>
+            <div className="col-md-4">
+              <label>Cena max (€)</label>
+              <input type="number" name="price_eur" className="form-control" value={currentPref.price_eur || ''} onChange={handleChange} />
+            </div>
+
+            {/* Car & Truck fields */}
+            {['car', 'truck'].includes(vehicleType) && (
+              <>
+                <div className="col-md-6">
+                  <label>Gorivo</label>
+                  <select name="fuel_type" className="form-select" value={currentPref.fuel_type || ''} onChange={handleChange}>
+                    <option value="">Izberi...</option>
+                    <option value="petrol">Bencin</option>
+                    <option value="diesel">Dizel</option>
+                    <option value="electric">Elektrika</option>
+                  </select>
+                </div>
+                <div className="col-md-6">
+                  <label>Menjalnik</label>
+                  <select name="gearbox" className="form-select" value={currentPref.gearbox || ''} onChange={handleChange}>
+                    <option value="">Izberi...</option>
+                    <option value="manual">Ročni</option>
+                    <option value="automatic">Avtomatski</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {/* Car specific */}
+            {vehicleType === 'car' && (
+              <>
+                <div className="col-md-4">
+                  <label>Motor (ccm)</label>
+                  <input type="number" name="engine_ccm" className="form-control" value={currentPref.engine_ccm || ''} onChange={handleChange} />
+                </div>
+                <div className="col-md-4">
+                  <label>Moč (kW)</label>
+                  <input type="number" name="engine_kw" className="form-control" value={currentPref.engine_kw || ''} onChange={handleChange} />
+                </div>
+                <div className="col-md-4">
+                  <label>Baterija (kWh)</label>
+                  <input type="number" name="battery_kwh" className="form-control" value={currentPref.battery_kwh || ''} onChange={handleChange} />
+                </div>
+              </>
+            )}
+
+            {/* Motorcycle */}
+            {vehicleType === 'motorcycle' && (
+              <>
+                <div className="col-md-6">
+                  <label>Moč (kW)</label>
+                  <input type="number" name="engine_kw" className="form-control" value={currentPref.engine_kw || ''} onChange={handleChange} />
+                </div>
+                <div className="col-md-6">
+                  <label>Moč (HP)</label>
+                  <input type="number" name="engine_hp" className="form-control" value={currentPref.engine_hp || ''} onChange={handleChange} />
+                </div>
+              </>
+            )}
+
+            <div className="col-12 text-end">
+              <button type="button" onClick={handleAddPreference} className="btn btn-success">
+                ➕ Dodaj preference
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* model */}
-        <div className="mb-3">
-          <label htmlFor="model" className="form-label">
-            Model <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="text"
-            id="model"
-            name="model"
-            className="form-control"
-            value={preferences.model}
-            onChange={handleChange}
-            placeholder="npr. V-Razred"
-          />
+        {/* Sidebar */}
+        <div className="col-md-4">
+          <div className="border p-3 bg-white rounded shadow-sm">
+            <h5 className="mb-3">Shranjene preference</h5>
+            {preferencesList.length === 0 ? (
+              <p className="text-muted">Ni dodanih preferenc.</p>
+            ) : (
+              <ul className="list-group">
+                {preferencesList.map((pref, idx) => (
+                  <li key={idx} className="list-group-item small">
+                    <strong>{pref.make}</strong> {pref.model} ({pref.first_registration || '—'})
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
-
-        {/* maxPrice */}
-        <div className="mb-3">
-          <label htmlFor="maxPrice" className="form-label">
-            Maksimalna cena (€) <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="number"
-            id="maxPrice"
-            name="maxPrice"
-            className="form-control"
-            value={preferences.maxPrice}
-            onChange={handleChange}
-            min={0}
-            placeholder="npr. 60000"
-          />
-        </div>
-
-        {/* minYear */}
-        <div className="mb-3">
-          <label htmlFor="minYear" className="form-label">
-            Najzgodnejša letnica <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="number"
-            id="minYear"
-            name="minYear"
-            className="form-control"
-            value={preferences.minYear}
-            onChange={handleChange}
-            min={1900}
-            max={new Date().getFullYear()}
-            placeholder="npr. 2015"
-          />
-        </div>
-
-        {/* maxMileage */}
-        <div className="mb-3">
-          <label htmlFor="maxMileage" className="form-label">
-            Največ km <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="number"
-            id="maxMileage"
-            name="maxMileage"
-            className="form-control"
-            value={preferences.maxMileage}
-            onChange={handleChange}
-            min={0}
-            placeholder="npr. 100000"
-          />
-        </div>
-
-        {/* fuelType */}
-        <div className="mb-3">
-          <label htmlFor="fuelType" className="form-label">
-            Gorivo <small className="text-muted">(neobvezno)</small>
-          </label>
-          <select
-            id="fuelType"
-            name="fuelType"
-            className="form-select"
-            value={preferences.fuelType}
-            onChange={handleChange}
-          >
-            <option value="">Izberi...</option>
-            <option value="petrol">Bencin</option>
-            <option value="diesel">Dizel</option>
-            <option value="electric">Električni</option>
-          </select>
-        </div>
-
-        {/* gearbox */}
-        <div className="mb-3">
-          <label htmlFor="gearbox" className="form-label">
-            Menjalnik <small className="text-muted">(neobvezno)</small>
-          </label>
-          <select
-            id="gearbox"
-            name="gearbox"
-            className="form-select"
-            value={preferences.gearbox}
-            onChange={handleChange}
-          >
-            <option value="">Izberi...</option>
-            <option value="manual">Ročni</option>
-            <option value="automatic">Avtomatski</option>
-          </select>
-        </div>
-
-        {/* minEngineCCM */}
-        <div className="mb-3">
-          <label htmlFor="minEngineCCM" className="form-label">
-            Min. motor (ccm) <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="number"
-            id="minEngineCCM"
-            name="minEngineCCM"
-            className="form-control"
-            value={preferences.minEngineCCM}
-            onChange={handleChange}
-            min={0}
-            placeholder="npr. 1500"
-          />
-        </div>
-
-        {/* minEngineKW */}
-        <div className="mb-3">
-          <label htmlFor="minEngineKW" className="form-label">
-            Min. moč (kW) <small className="text-muted">(neobvezno)</small>
-          </label>
-          <input
-            type="number"
-            id="minEngineKW"
-            name="minEngineKW"
-            className="form-control"
-            value={preferences.minEngineKW}
-            onChange={handleChange}
-            min={0}
-            placeholder="npr. 100"
-          />
-        </div>
-
-        {/* batteryCapacity */}
-        <div className="mb-3">
-          <label htmlFor="batteryCapacity" className="form-label">
-            Kapaciteta baterije (kWh) <small className="text-muted">(samo če električni)</small>
-          </label>
-          <input
-            type="number"
-            id="batteryCapacity"
-            name="batteryCapacity"
-            className="form-control"
-            value={preferences.batteryCapacity}
-            onChange={handleChange}
-            min={0}
-            placeholder="npr. 75"
-          />
-        </div>
-
-        <button type="submit" className="btn btn-success w-100">
-          Potrdi preference
-        </button>
-      </form>
+      </div>
     </div>
   );
 };
 
-export default CarPreferencesForm;
+export default VehiclePreferencesForm;
