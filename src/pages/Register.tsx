@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../util/firebaseAuth';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
@@ -11,13 +11,23 @@ const RegisterForm: React.FC = () => {
     email: '',
     geslo: '',
   });
+  const navigate = useNavigate();
 
   const [errors, setErrors] = useState({
     telefon: '',
   });
 
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        navigate("/");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
   const [message, setMessage] = useState('');
-  const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,9 +108,8 @@ const RegisterForm: React.FC = () => {
                   <label htmlFor={name} className="form-label">{label}</label>
                   <input
                     type={type}
-                    className={`form-control ${
-                      name === 'telefon' && errors.telefon ? 'is-invalid' : ''
-                    }`}
+                    className={`form-control ${name === 'telefon' && errors.telefon ? 'is-invalid' : ''
+                      }`}
                     id={name}
                     name={name}
                     placeholder={`Vnesi ${label.toLowerCase()}`}
