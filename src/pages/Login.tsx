@@ -1,12 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { auth, googleProvider } from "../util/firebaseAuth";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        navigate("/");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +40,10 @@ const Login = () => {
         throw new Error(errorData.message || "Login failed");
       }
 
-      const data = await res.json();
-      setMessage(`✅ Prijava uspešna! ID: ${data.id}`);
+      await res.json();
+
+      setMessage("✅ Prijava uspešna!");
+      navigate("/");
     } catch (error: any) {
       setMessage(`❌ Napaka: ${error.message}`);
     }
@@ -54,8 +68,10 @@ const Login = () => {
         throw new Error(errorData.message || "Google login failed");
       }
 
-      const data = await res.json();
-      setMessage(`✅ Google prijava uspešna! ID: ${data.id}`);
+      await res.json();
+
+      setMessage("✅ Google prijava uspešna!");
+      navigate("/");
     } catch (error: any) {
       setMessage(`❌ Napaka pri Google prijavi: ${error.message}`);
     }

@@ -4,8 +4,13 @@ import SearchForm from '../components/SearchForm';
 import MotorcycleSearchForm from '../components/MotorcycleSearchForm';
 import TruckSearchForm from '../components/TruckSearchForm';
 import axios from 'axios';
+import type { User } from 'firebase/auth';
 
-export default function Home() {
+type HomeProps = {
+  user: User | null;
+};
+
+export default function Home({ user }: HomeProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'car' | 'motorcycle' | 'truck'>('car');
   const [aiQuery, setAiQuery] = useState('');
@@ -73,7 +78,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % Math.ceil(recommendedCars.length / 4));
-    }, 4000); 
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [recommendedCars]);
@@ -89,12 +94,12 @@ export default function Home() {
           setTimeout(() => {
             setCurrentExampleIndex((prevIndex) => (prevIndex + 1) % examplePrompts.length);
             setCharIndex(0);
-          }, 2000); 
+          }, 2000);
           clearInterval(typingInterval);
           return prevCharIndex;
         }
       });
-    }, 50); 
+    }, 50);
 
     return () => clearInterval(typingInterval);
   }, [currentExampleIndex, charIndex, examplePrompts]);
@@ -170,7 +175,7 @@ export default function Home() {
         </div>
       </div>
 
-      {recommendedCars.length > 0 && (
+      {user && recommendedCars.length > 0 && (
         <section className="container mt-5 mb-5">
           <h4 className="fw-bold mb-4 text-dark text-left">Zanimivo zate</h4>
           <div className="row g-3">
