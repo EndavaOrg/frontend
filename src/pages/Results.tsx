@@ -13,7 +13,7 @@ export default function Results() {
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
 
-  const ITEMS_PER_PAGE = 20; // SHOW MORE RESULTS PER PAGE 🚀
+  const ITEMS_PER_PAGE = 20; 
 
   const fetchResults = useCallback(async () => {
     setLoading(true);

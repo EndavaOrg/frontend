@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaMotorcycle, FaCalendarAlt, FaTachometerAlt, FaEuroSign } from 'react-icons/fa';
 
+
+
 interface Props {
   onSearch: (params: any, type: 'car' | 'motorcycle') => void;
 }
@@ -20,6 +22,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
   const [countLoading, setCountLoading] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+
 
   const powerRanges = form.powerUnit === 'HP'
     ? [[10, 30], [31, 70], [71, 100], [101, 150]]
