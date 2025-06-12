@@ -4,6 +4,7 @@ import { auth } from '../util/firebaseAuth';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const RegisterForm: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({
     ime: '',
     priimek: '',
@@ -52,8 +53,9 @@ const RegisterForm: React.FC = () => {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      // 1. Register user in Firebase
       const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.geslo);
       const user = userCredential.user;
       const token = await user.getIdToken();
@@ -84,6 +86,8 @@ const RegisterForm: React.FC = () => {
       navigate('/preferences');
     } catch (error: any) {
       setMessage(`❌ Napaka: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,9 +127,12 @@ const RegisterForm: React.FC = () => {
                 </div>
               ))}
 
-              <button type="submit" className="btn btn-primary w-100 mt-3">
-                Registriraj se!
-              </button>
+              <button type="submit" className="btn btn-primary w-100 mt-3" disabled={isLoading}>
+              {isLoading ? (
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              ) : null}
+              Registriraj se!
+            </button>
             </form>
           </div>
         </div>

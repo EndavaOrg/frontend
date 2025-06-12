@@ -65,23 +65,23 @@ function App() {
                   className="btn btn-outline-light"
                   title="Preferences"
                 >
-                  ⚙ Preferences
+                  ⚙ Preference
                 </Link>
 
                 <button
                   className="btn btn-outline-light"
                   onClick={handleLogout}
                 >
-                  Logout
+                  Odjava
                 </button>
               </>
             ) : (
               <>
                 <Link to="/login" className="btn btn-outline-light">
-                  Login
+                  Prijava
                 </Link>
                 <Link to="/register" className="btn btn-outline-light">
-                  Register
+                  Registracija
                 </Link>
               </>
             )}

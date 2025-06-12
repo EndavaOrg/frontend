@@ -47,7 +47,7 @@ export default function Watchlist() {
 
   return (
     <div className="container py-5">
-      <h2 className="fw-bold text-center mb-4">Watchlist</h2>
+      <h2 className="fw-bold text-center mb-4">Seznam spremljanja</h2>
 
       <div className="mb-3 d-flex justify-content-start">
         <button

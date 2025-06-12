@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-// Define vehicle types
 type VehicleType = 'car' | 'motorcycle' | 'truck';
 
-// Define preference structure
 interface Preference {
   make: string;
   model: string;
@@ -20,7 +19,6 @@ interface Preference {
   battery_kwh?: number | '';
 }
 
-// Initialize an empty preference
 const getEmptyPreference = (): Preference => ({
   make: '',
   model: '',
@@ -39,8 +37,13 @@ const VehiclePreferencesForm: React.FC = () => {
   const [vehicleType, setVehicleType] = useState<VehicleType>('car');
   const [currentPref, setCurrentPref] = useState<Preference>(getEmptyPreference());
   const [preferencesList, setPreferencesList] = useState<Preference[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [makes, setMakes] = useState<string[]>([]);
+  const [models, setModels] = useState<string[]>([]);
   const navigate = useNavigate();
   const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
+
+  const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i).reverse();
 
   const fetchPreferences = async (type: VehicleType) => {
     const auth = getAuth();
@@ -61,22 +64,82 @@ const VehiclePreferencesForm: React.FC = () => {
     }
   };
 
-  // Load preferences on mount
- useEffect(() => {
-  const auth = getAuth();
-  const unsubscribe = auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      fetchPreferences(vehicleType);
+  const fetchMakes = async (type: VehicleType) => {
+    try {
+      let response;
+      if (type === 'car') {
+        response = await axios.get(`${API_BASE_URL}/api/cars/carquery/makes`);
+        const makesRaw = response.data?.Makes;
+        if (makesRaw) {
+          const makes = (makesRaw as any[]).map(m => m.make_display);
+          setMakes([...new Set(makes)].sort());
+        } else {
+          setMakes([]);
+        }
+      } else if (type === 'motorcycle') {
+        response = await axios.get(`${API_BASE_URL}/api/motorcycles/makes`);
+        setMakes(response.data || []);
+      } else if (type === 'truck') {
+        response = await axios.get(`${API_BASE_URL}/api/trucks/makes`);
+        setMakes(response.data.sort() || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch makes:', err);
+      setMakes([]);
     }
-  });
+  };
 
-  return () => unsubscribe();
-}, [vehicleType]);
+  const fetchModels = async (type: VehicleType, make: string) => {
+    if (!make) {
+      setModels([]);
+      return;
+    }
 
+    try {
+      let response;
+      if (type === 'car') {
+        response = await axios.get(`${API_BASE_URL}/api/cars/carquery/models?make=${make.toLowerCase()}`);
+        const modelsRaw = response.data?.Models;
+        if (modelsRaw) {
+          const models = (modelsRaw as any[]).map(m => m.model_name);
+          setModels([...new Set(models)].sort());
+        } else {
+          setModels([]);
+        }
+      } else if (type === 'motorcycle') {
+        response = await axios.get(`${API_BASE_URL}/api/motorcycles/models?make=${make}`);
+        setModels(response.data || []);
+      } else if (type === 'truck') {
+        response = await axios.get(`${API_BASE_URL}/api/trucks/models?make=${make}`);
+        setModels(response.data.sort() || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch models:', err);
+      setModels([]);
+    }
+  };
+
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        fetchPreferences(vehicleType);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [vehicleType]);
 
   useEffect(() => {
     fetchPreferences(vehicleType);
+    fetchMakes(vehicleType);
+    setCurrentPref(getEmptyPreference());
+    setModels([]);
   }, [vehicleType]);
+
+  useEffect(() => {
+    fetchModels(vehicleType, currentPref.make);
+  }, [currentPref.make, vehicleType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -106,6 +169,8 @@ const VehiclePreferencesForm: React.FC = () => {
       return alert('Vnesi vsaj znamko ali model.');
     }
 
+    setIsLoading(true);
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/users/${user.uid}/preferences`, {
         method: 'PUT',
@@ -123,6 +188,8 @@ const VehiclePreferencesForm: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert('Napaka pri shranjevanju.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -150,7 +217,6 @@ const VehiclePreferencesForm: React.FC = () => {
 
   const handleVehicleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setVehicleType(e.target.value as VehicleType);
-    setCurrentPref(getEmptyPreference());
   };
 
   const skip = () => navigate('/');
@@ -176,16 +242,27 @@ const VehiclePreferencesForm: React.FC = () => {
           <div className="row g-3">
             <div className="col-md-6">
               <label>Znamka</label>
-              <input name="make" className="form-control" value={currentPref.make} onChange={handleChange} />
+              <select name="make" className="form-select" value={currentPref.make} onChange={handleChange}>
+                <option value="">Izberi znamko</option>
+                {makes.map(make => <option key={make} value={make}>{make}</option>)}
+              </select>
             </div>
             <div className="col-md-6">
               <label>Model</label>
-              <input name="model" className="form-control" value={currentPref.model} onChange={handleChange} />
+              <select name="model" className="form-select" value={currentPref.model} onChange={handleChange}>
+                <option value="">Izberi model</option>
+                {models.map(model => <option key={model} value={model}>{model}</option>)}
+              </select>
             </div>
             <div className="col-md-4">
               <label>Letnik od</label>
-              <input type="number" name="first_registration" className="form-control" value={currentPref.first_registration || ''} onChange={handleChange} />
+              <select name="first_registration" className="form-select" value={currentPref.first_registration || ''} onChange={handleChange}>
+                <option value="">Poljubno</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
             </div>
+
+            {/* Keep other fields unchanged */}
             <div className="col-md-4">
               <label>Prevoženi km (max)</label>
               <input type="number" name="mileage_km" className="form-control" value={currentPref.mileage_km || ''} onChange={handleChange} />
@@ -195,61 +272,11 @@ const VehiclePreferencesForm: React.FC = () => {
               <input type="number" name="price_eur" className="form-control" value={currentPref.price_eur || ''} onChange={handleChange} />
             </div>
 
-            {['car', 'truck'].includes(vehicleType) && (
-              <>
-                <div className="col-md-6">
-                  <label>Gorivo</label>
-                  <select name="fuel_type" className="form-select" value={currentPref.fuel_type || ''} onChange={handleChange}>
-                    <option value="">Izberi...</option>
-                    <option value="petrol">Bencin</option>
-                    <option value="diesel">Dizel</option>
-                    <option value="electric">Elektrika</option>
-                  </select>
-                </div>
-                <div className="col-md-6">
-                  <label>Menjalnik</label>
-                  <select name="gearbox" className="form-select" value={currentPref.gearbox || ''} onChange={handleChange}>
-                    <option value="">Izberi...</option>
-                    <option value="manual">Ročni</option>
-                    <option value="automatic">Avtomatski</option>
-                  </select>
-                </div>
-              </>
-            )}
-
-            {vehicleType === 'car' && (
-              <>
-                <div className="col-md-4">
-                  <label>Motor (ccm)</label>
-                  <input type="number" name="engine_ccm" className="form-control" value={currentPref.engine_ccm || ''} onChange={handleChange} />
-                </div>
-                <div className="col-md-4">
-                  <label>Moč (kW)</label>
-                  <input type="number" name="engine_kw" className="form-control" value={currentPref.engine_kw || ''} onChange={handleChange} />
-                </div>
-                <div className="col-md-4">
-                  <label>Baterija (kWh)</label>
-                  <input type="number" name="battery_kwh" className="form-control" value={currentPref.battery_kwh || ''} onChange={handleChange} />
-                </div>
-              </>
-            )}
-
-            {vehicleType === 'motorcycle' && (
-              <>
-                <div className="col-md-6">
-                  <label>Moč (kW)</label>
-                  <input type="number" name="engine_kw" className="form-control" value={currentPref.engine_kw || ''} onChange={handleChange} />
-                </div>
-                <div className="col-md-6">
-                  <label>Moč (HP)</label>
-                  <input type="number" name="engine_hp" className="form-control" value={currentPref.engine_hp || ''} onChange={handleChange} />
-                </div>
-              </>
-            )}
-
             <div className="col-12 text-end">
-              <button type="button" onClick={handleAddPreference} className="btn btn-success">
-                ➕ Dodaj preference
+              <button type="button" onClick={handleAddPreference} className="btn btn-success" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                ) : '➕'} Dodaj preference
               </button>
             </div>
           </div>

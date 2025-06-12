@@ -32,9 +32,9 @@ export default function Home({ user }: HomeProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const examplePrompts = [
-    "I want an electric car newer than 2018",
-    "I want a really old car",
-    "I want a car that costs less than 10,000",
+    "Želim si električni avto, novejši od leta 2018",
+    "Želim si res star avto",
+    "Želim si motor za manj kot 3000 €",
   ];
 
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
@@ -74,50 +74,67 @@ export default function Home({ user }: HomeProps) {
   };
 
   const fetchRecommendedCars = async (preferences?: Preference[]) => {
-    try {
-      let fetchedCars: any[] = [];
+  try {
+    let fetchedCars: any[] = [];
 
-      if (preferences && preferences.length > 0) {
-        for (const pref of preferences) {
-          const params: any = {};
-          const vehicleType = pref._vehicleType || 'car';
+    if (preferences && preferences.length > 0) {
+      for (const pref of preferences) {
+        const vehicleType = pref._vehicleType || 'car';
 
-          if (pref.make) params.make = pref.make;
-          if (pref.model) params.model = pref.model;
-          if (pref.fuel_type) params.fuel_type = pref.fuel_type;
-          if (pref.gearbox) params.gearbox = pref.gearbox;
-          if (pref.first_registration) params.first_registration_gte = pref.first_registration;
-          if (pref.mileage_km) params.mileage_km_lte = pref.mileage_km;
-          if (pref.price_eur) params.price_eur_lte = pref.price_eur;
-
+        // First attempt: full filters
+        const tryFetch = async (params: any) => {
           const queryString = new URLSearchParams(params).toString();
+          const response = await axios.get(`${API_BASE_URL}/api/${vehicleType}s?limit=1&${queryString}`);
+          return response.data;
+        };
 
-          const response = await axios.get(`${API_BASE_URL}/api/${vehicleType}s?limit=6&${queryString}`);
+        // Build full params
+        const fullParams: any = {};
+        if (pref.make) fullParams.make = pref.make;
+        if (pref.model) fullParams.model = pref.model;
+        if (pref.fuel_type) fullParams.fuel_type = pref.fuel_type;
+        if (pref.gearbox) fullParams.gearbox = pref.gearbox;
+        if (pref.first_registration) fullParams.first_registration_gte = pref.first_registration;
+        if (pref.mileage_km) fullParams.mileage_km_lte = pref.mileage_km;
+        if (pref.price_eur) fullParams.price_eur_lte = pref.price_eur;
 
-          response.data.forEach((item: any) => {
-            if (!fetchedCars.some((c) => c._id === item._id)) {
-              fetchedCars.push(item);
-            }
-          });
+        // Step 1 → Try full params
+        let result = await tryFetch(fullParams);
 
-          if (fetchedCars.length >= 12) break;
+        // Step 2 → Fallback: just make
+        if (result.length === 0 && pref.make) {
+          result = await tryFetch({ make: pref.make });
         }
-      }
 
-      if (fetchedCars.length < 12) {
-        const response = await axios.get(`${API_BASE_URL}/api/cars?limit=12&sort=-_id`);
-        response.data.forEach((car: any) => {
-          if (fetchedCars.length < 12 && !fetchedCars.some((c) => c._id === car._id)) {
-            fetchedCars.push(car);
+        // Step 3 → Fallback: any of that type
+        if (result.length === 0) {
+          result = await tryFetch({});
+        }
+
+        // Add unique result
+        result.forEach((item: any) => {
+          if (!fetchedCars.some((c) => c._id === item._id)) {
+            fetchedCars.push(item);
           }
         });
       }
-
-      setRecommendedCars(fetchedCars);
-    } catch (err) {
-      console.error('Failed to fetch recommended cars:', err);
     }
-  };
+
+    // Final fallback: fill up to 12
+    if (fetchedCars.length < 12) {
+      const response = await axios.get(`${API_BASE_URL}/api/cars?limit=12&sort=-_id`);
+      response.data.forEach((car: any) => {
+        if (fetchedCars.length < 12 && !fetchedCars.some((c) => c._id === car._id)) {
+          fetchedCars.push(car);
+        }
+      });
+    }
+
+    setRecommendedCars(fetchedCars);
+  } catch (err) {
+    console.error('Failed to fetch recommended cars:', err);
+  }
+};
 
   const fetchUserPreferences = async () => {
     if (!user) {
