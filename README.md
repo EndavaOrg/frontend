@@ -1,5 +1,8 @@
 # Primerjalnik Cen - Frontend
 
+Link do aplikacijo(frontend): [frontend-14i1.onrender.com](https://frontend-14i1.onrender.com/)
+
+
 [![React](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.3.5-646CFF?logo=vite)](https://vitejs.dev/)
