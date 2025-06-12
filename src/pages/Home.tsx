@@ -10,6 +10,17 @@ type HomeProps = {
   user: User | null;
 };
 
+type Preference = {
+  make?: string;
+  model?: string;
+  first_registration?: number;
+  mileage_km?: number;
+  price_eur?: number;
+  fuel_type?: string;
+  gearbox?: string;
+  _vehicleType: 'car' | 'motorcycle' | 'truck';
+};
+
 export default function Home({ user }: HomeProps) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'car' | 'motorcycle' | 'truck'>('car');
@@ -62,18 +73,95 @@ export default function Home({ user }: HomeProps) {
     }
   };
 
-  useEffect(() => {
-    const fetchRecommendedCars = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/api/cars?limit=12&sort=-_id`);
-        setRecommendedCars(response.data.slice(0, 12));
-      } catch (err) {
-        console.error('Failed to fetch recommended cars:', err);
-      }
-    };
+  const fetchRecommendedCars = async (preferences?: Preference[]) => {
+    try {
+      let fetchedCars: any[] = [];
 
-    fetchRecommendedCars();
-  }, []);
+      if (preferences && preferences.length > 0) {
+        for (const pref of preferences) {
+          const params: any = {};
+          const vehicleType = pref._vehicleType || 'car';
+
+          if (pref.make) params.make = pref.make;
+          if (pref.model) params.model = pref.model;
+          if (pref.fuel_type) params.fuel_type = pref.fuel_type;
+          if (pref.gearbox) params.gearbox = pref.gearbox;
+          if (pref.first_registration) params.first_registration_gte = pref.first_registration;
+          if (pref.mileage_km) params.mileage_km_lte = pref.mileage_km;
+          if (pref.price_eur) params.price_eur_lte = pref.price_eur;
+
+          const queryString = new URLSearchParams(params).toString();
+
+          const response = await axios.get(`${API_BASE_URL}/api/${vehicleType}s?limit=6&${queryString}`);
+
+          response.data.forEach((item: any) => {
+            if (!fetchedCars.some((c) => c._id === item._id)) {
+              fetchedCars.push(item);
+            }
+          });
+
+          if (fetchedCars.length >= 12) break;
+        }
+      }
+
+      if (fetchedCars.length < 12) {
+        const response = await axios.get(`${API_BASE_URL}/api/cars?limit=12&sort=-_id`);
+        response.data.forEach((car: any) => {
+          if (fetchedCars.length < 12 && !fetchedCars.some((c) => c._id === car._id)) {
+            fetchedCars.push(car);
+          }
+        });
+      }
+
+      setRecommendedCars(fetchedCars);
+    } catch (err) {
+      console.error('Failed to fetch recommended cars:', err);
+    }
+  };
+
+  const fetchUserPreferences = async () => {
+    if (!user) {
+      fetchRecommendedCars();
+      return;
+    }
+
+    try {
+      const token = await user.getIdToken();
+
+      const [carRes, motoRes, truckRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/api/users/${user.uid}/preferences/car`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_BASE_URL}/api/users/${user.uid}/preferences/motorcycle`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_BASE_URL}/api/users/${user.uid}/preferences/truck`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const carPrefs = Array.isArray(carRes.data.preferences) ? carRes.data.preferences as Preference[] : [];
+      const motoPrefs = Array.isArray(motoRes.data.preferences) ? motoRes.data.preferences as Preference[] : [];
+      const truckPrefs = Array.isArray(truckRes.data.preferences) ? truckRes.data.preferences as Preference[] : [];
+
+
+      const allPrefs: Preference[] = [
+  ...carPrefs.map((pref) => ({ ...pref, _vehicleType: 'car' as const })),
+  ...motoPrefs.map((pref) => ({ ...pref, _vehicleType: 'motorcycle' as const })),
+  ...truckPrefs.map((pref) => ({ ...pref, _vehicleType: 'truck' as const })),
+];
+
+
+      fetchRecommendedCars(allPrefs);
+    } catch (err) {
+      console.error('Failed to fetch user preferences:', err);
+      fetchRecommendedCars();
+    }
+  };
+
+  useEffect(() => {
+    fetchUserPreferences();
+  }, [user]);
 
   useEffect(() => {
     const interval = setInterval(() => {

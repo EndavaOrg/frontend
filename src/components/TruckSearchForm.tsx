@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTruck, FaCalendarAlt, FaWeightHanging, FaEuroSign } from 'react-icons/fa';
 import { GiGearStick } from 'react-icons/gi';
+import { FaBolt } from 'react-icons/fa';
 
 interface Props {
   onSearch: (params: any) => void;
@@ -11,7 +12,8 @@ interface Props {
 export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
   const [form, setForm] = useState({
     make: '', model: '', yearFrom: '', mileageFrom: '', mileageTo: '',
-    fuel_type: '', gearbox: '', priceFrom: '', priceTo: ''
+    fuel_type: '', gearbox: '', priceFrom: '', priceTo: '',
+    engineKwFrom: '', engineKwTo: ''
   });
 
   const [makes, setMakes] = useState<string[]>([]);
@@ -25,6 +27,7 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
   const years = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => 1900 + i).reverse();
   const mileageRanges = [[0, 50000], [50000, 100000], [100000, 200000], [200000, 400000], [400000, 600000], [600000, 800000], [800000, 1000000]];
   const priceRanges = [1000, 5000, 10000, 20000, 50000, 75000, 100000, 150000, 200000];
+  const engineKwRanges = [50, 100, 150, 200, 300, 400, 500, 600, 700];
 
   useEffect(() => {
     axios.get(`${API_BASE_URL}/api/trucks/makes`)
@@ -161,6 +164,22 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
             <option value="Bencin">Bencin</option>
             <option value="Električno">Električno</option>
             <option value="Hibrid">Hibrid</option>
+          </select>
+        </div>
+
+        <div className="col-md-4">
+          <label className="form-label"><FaBolt className="me-2" />Moč (kW) od</label>
+          <select name="engineKwFrom" className="form-select" value={form.engineKwFrom} onChange={handleChange}>
+            <option value="">Min</option>
+            {engineKwRanges.map(p => <option key={p} value={p}>{p} kW</option>)}
+          </select>
+        </div>
+
+        <div className="col-md-4">
+          <label className="form-label"><FaBolt className="me-2" />Moč (kW) do</label>
+          <select name="engineKwTo" className="form-select" value={form.engineKwTo} onChange={handleChange}>
+            <option value="">Max</option>
+            {engineKwRanges.map(p => <option key={p} value={p}>{p} kW</option>)}
           </select>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Car, Motorcycle, Truck, Vehicle } from '../types/car';
+import { getAuth } from 'firebase/auth';
 
 type SortOrder = 'none' | 'price-asc' | 'price-desc' | 'mileage-asc' | 'mileage-desc';
 type VehicleType = Car | Motorcycle | Truck | Vehicle;
@@ -12,7 +13,7 @@ export default function Results() {
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
 
-  const ITEMS_PER_PAGE = 10;
+  const ITEMS_PER_PAGE = 20; // SHOW MORE RESULTS PER PAGE 🚀
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
@@ -90,6 +91,26 @@ export default function Results() {
     }
   });
 
+  const handleAddToWatchlist = (item: VehicleType) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      alert('Za dodajanje na seznam spremljanja se prijavite.');
+      return;
+    }
+
+    const watchlistKey = `watchlist-${user.uid}`;
+    const existing = JSON.parse(localStorage.getItem(watchlistKey) || '[]');
+    const exists = existing.some((x: any) => x._id === (item as any)._id);
+    if (!exists) {
+      existing.push(item);
+      localStorage.setItem(watchlistKey, JSON.stringify(existing));
+      alert('Dodano na seznam spremljanja!');
+    } else {
+      alert('To vozilo je že na seznamu spremljanja.');
+    }
+  };
+
   const isCar = (v: VehicleType): v is Car =>
     'fuel_type' in v && 'gearbox' in v && 'engine_kw' in v;
 
@@ -98,18 +119,6 @@ export default function Results() {
 
   const isTruck = (v: VehicleType): v is Truck =>
     'fuel_type' in v && 'gearbox' in v && 'first_registration' in v;
-
-  const handleAddToWatchlist = (item: VehicleType) => {
-    const existing = JSON.parse(localStorage.getItem('watchlist') || '[]');
-    const exists = existing.some((x: any) => x._id === (item as any)._id);
-    if (!exists) {
-      existing.push(item);
-      localStorage.setItem('watchlist', JSON.stringify(existing));
-      alert('Dodano na seznam spremljanja!');
-    } else {
-      alert('To vozilo je že na seznamu spremljanja.');
-    }
-  };
 
   const totalPages = Math.ceil(sortedResults.length / ITEMS_PER_PAGE);
   const paginatedResults = sortedResults.slice(
@@ -237,7 +246,7 @@ export default function Results() {
             ))}
           </div>
 
-          <div className="d-flex justify-content-center align-items-center gap-2 mt-4">
+          <div className="d-flex justify-content-center align-items-center gap-3 mt-4">
             <button
               className="btn btn-outline-secondary"
               onClick={handlePrevPage}
@@ -245,7 +254,7 @@ export default function Results() {
             >
               ← Prejšnja
             </button>
-            <span>Stran {currentPage} / {totalPages}</span>
+            <span className="fw-medium">Stran {currentPage} / {totalPages}</span>
             <button
               className="btn btn-outline-secondary"
               onClick={handleNextPage}

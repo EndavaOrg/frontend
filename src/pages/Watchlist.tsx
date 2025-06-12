@@ -1,22 +1,48 @@
 import { useState, useEffect } from 'react';
 import type { Vehicle } from '../types/car';
 import { useNavigate } from 'react-router-dom';
+import { getAuth } from 'firebase/auth';
 
 export default function Watchlist() {
   const [watchlist, setWatchlist] = useState<Vehicle[]>([]);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const stored = localStorage.getItem('watchlist');
+  const loadWatchlist = () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) {
+      setWatchlist([]);
+      return;
+    }
+
+    const watchlistKey = `watchlist-${user.uid}`;
+    const stored = localStorage.getItem(watchlistKey);
     if (stored) {
       setWatchlist(JSON.parse(stored));
+    } else {
+      setWatchlist([]);
     }
+  };
+
+  useEffect(() => {
+    const unsubscribe = getAuth().onAuthStateChanged(() => {
+      loadWatchlist();
+    });
+
+    loadWatchlist();
+
+    return () => unsubscribe();
   }, []);
 
   const handleRemove = (id: string) => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const watchlistKey = `watchlist-${user.uid}`;
     const updated = watchlist.filter((item: any) => item._id !== id);
     setWatchlist(updated);
-    localStorage.setItem('watchlist', JSON.stringify(updated));
+    localStorage.setItem(watchlistKey, JSON.stringify(updated));
   };
 
   return (
@@ -51,11 +77,6 @@ export default function Watchlist() {
                 />
                 <div className="card-body d-flex flex-column">
                   <h5 className="card-title">{item.make} {item.model}</h5>
-                  <ul className="list-unstyled text-muted small mb-3">
-                    <li><strong>Letnik:</strong> {(item as any).first_registration ?? (item as any).year ?? '—'}</li>
-                    <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
-                    <li><strong>Moč:</strong> {(item as any).engine_kw ?? '—'} kW {(item as any).engine_hp ? `(${(item as any).engine_hp} HP)` : ''}</li>
-                  </ul>
                   <h6 className="text-dark fw-bold mb-3">
                     {item.price_eur ? `${item.price_eur.toLocaleString()} €` : '—'}
                   </h6>
