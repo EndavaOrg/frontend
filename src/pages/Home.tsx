@@ -4,6 +4,7 @@ import SearchForm from '../components/SearchForm';
 import MotorcycleSearchForm from '../components/MotorcycleSearchForm';
 import TruckSearchForm from '../components/TruckSearchForm';
 import axios from 'axios';
+import { fetchRecommendations } from '../utils/recommendations';
 import type { User } from 'firebase/auth';
 
 type HomeProps = {
@@ -74,67 +75,8 @@ export default function Home({ user }: HomeProps) {
   };
 
   const fetchRecommendedCars = async (preferences?: Preference[]) => {
-  try {
-    let fetchedCars: any[] = [];
-
-    if (preferences && preferences.length > 0) {
-      for (const pref of preferences) {
-        const vehicleType = pref._vehicleType || 'car';
-
-        // First attempt: full filters
-        const tryFetch = async (params: any) => {
-          const queryString = new URLSearchParams(params).toString();
-          const response = await axios.get(`${API_BASE_URL}/api/${vehicleType}s?limit=1&${queryString}`);
-          return response.data;
-        };
-
-        // Build full params
-        const fullParams: any = {};
-        if (pref.make) fullParams.make = pref.make;
-        if (pref.model) fullParams.model = pref.model;
-        if (pref.fuel_type) fullParams.fuel_type = pref.fuel_type;
-        if (pref.gearbox) fullParams.gearbox = pref.gearbox;
-        if (pref.first_registration) fullParams.first_registration_gte = pref.first_registration;
-        if (pref.mileage_km) fullParams.mileage_km_lte = pref.mileage_km;
-        if (pref.price_eur) fullParams.price_eur_lte = pref.price_eur;
-
-        // Step 1 → Try full params
-        let result = await tryFetch(fullParams);
-
-        // Step 2 → Fallback: just make
-        if (result.length === 0 && pref.make) {
-          result = await tryFetch({ make: pref.make });
-        }
-
-        // Step 3 → Fallback: any of that type
-        if (result.length === 0) {
-          result = await tryFetch({});
-        }
-
-        // Add unique result
-        result.forEach((item: any) => {
-          if (!fetchedCars.some((c) => c._id === item._id)) {
-            fetchedCars.push(item);
-          }
-        });
-      }
-    }
-
-    // Final fallback: fill up to 12
-    if (fetchedCars.length < 12) {
-      const response = await axios.get(`${API_BASE_URL}/api/cars?limit=12&sort=-_id`);
-      response.data.forEach((car: any) => {
-        if (fetchedCars.length < 12 && !fetchedCars.some((c) => c._id === car._id)) {
-          fetchedCars.push(car);
-        }
-      });
-    }
-
-    setRecommendedCars(fetchedCars);
-  } catch (err) {
-    console.error('Failed to fetch recommended cars:', err);
-  }
-};
+    setRecommendedCars(await fetchRecommendations(API_BASE_URL, preferences));
+  };
 
   const fetchUserPreferences = async () => {
     if (!user) {
@@ -182,7 +124,7 @@ export default function Home({ user }: HomeProps) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % Math.ceil(recommendedCars.length / 4));
+      setCurrentSlide((prev) => (prev + 1) % Math.max(1, Math.ceil(recommendedCars.length / 4)));
     }, 4000);
 
     return () => clearInterval(interval);

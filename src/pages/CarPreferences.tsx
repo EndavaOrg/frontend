@@ -2,22 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { type Preference, parsePreferenceField, cleanPreference, validatePreference } from '../utils/validation';
 
 type VehicleType = 'car' | 'motorcycle' | 'truck';
-
-interface Preference {
-  make: string;
-  model: string;
-  first_registration?: number | '';
-  mileage_km?: number | '';
-  price_eur?: number | '';
-  fuel_type?: string;
-  gearbox?: string;
-  engine_ccm?: number | '';
-  engine_kw?: number | '';
-  engine_hp?: number | '';
-  battery_kwh?: number | '';
-}
 
 const getEmptyPreference = (): Preference => ({
   make: '',
@@ -143,13 +130,7 @@ const VehiclePreferencesForm: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const numericFields = [
-      'first_registration', 'mileage_km', 'price_eur',
-      'engine_ccm', 'engine_kw', 'engine_hp', 'battery_kwh'
-    ];
-    const parsedValue = numericFields.includes(name)
-      ? value === '' ? '' : Number(value)
-      : value;
+    const parsedValue = parsePreferenceField(name, value);
 
     setCurrentPref(prev => ({ ...prev, [name]: parsedValue }));
   };
@@ -161,12 +142,10 @@ const VehiclePreferencesForm: React.FC = () => {
 
     const token = await user.getIdToken();
 
-    const cleaned = Object.fromEntries(
-      Object.entries(currentPref).filter(([_, val]) => val !== '')
-    ) as Preference;
-
-    if (!cleaned.make && !cleaned.model) {
-      return alert('Vnesi vsaj znamko ali model.');
+    const cleaned = cleanPreference(currentPref) as Preference;
+    const errors = validatePreference(cleaned);
+    if (errors.length > 0) {
+      return alert(errors.join('\n'));
     }
 
     setIsLoading(true);

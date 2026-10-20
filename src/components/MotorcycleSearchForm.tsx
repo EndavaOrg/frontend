@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { buildSearchParams, buildSearchQuery } from '../utils/searchQuery';
 import { FaMotorcycle, FaCalendarAlt, FaTachometerAlt, FaEuroSign } from 'react-icons/fa';
 
 
@@ -52,23 +53,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
     const fetchCount = async () => {
       setCountLoading(true);
       try {
-        const cleanedParams: Record<string, string> = {};
-        for (const key in form) {
-          const value = (form as any)[key];
-          if (value !== '' && value !== null && value !== undefined) {
-            cleanedParams[key] = value;
-          }
-        }
-
-        if (cleanedParams.yearFrom) cleanedParams.first_registration = cleanedParams.yearFrom;
-        if (cleanedParams.powerFrom) cleanedParams.engineKwFrom = cleanedParams.powerUnit === 'HP'
-          ? Math.round(Number(cleanedParams.powerFrom) / 1.36).toString()
-          : cleanedParams.powerFrom;
-        if (cleanedParams.powerTo) cleanedParams.engineKwTo = cleanedParams.powerUnit === 'HP'
-          ? Math.round(Number(cleanedParams.powerTo) / 1.36).toString()
-          : cleanedParams.powerTo;
-
-        const query = new URLSearchParams(cleanedParams).toString();
+        const query = buildSearchQuery(form);
         const response = await axios.get(`${API_BASE_URL}/api/motorcycles?${query}`);
         setResultCount(response.data.length);
       } catch (err) {
@@ -89,16 +74,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = { ...form };
-    if (params.yearFrom) params.first_registration = params.yearFrom;
-    if (params.powerFrom) params.engineKwFrom = params.powerUnit === 'HP'
-      ? Math.round(Number(params.powerFrom) / 1.36).toString()
-      : params.powerFrom;
-    if (params.powerTo) params.engineKwTo = params.powerUnit === 'HP'
-      ? Math.round(Number(params.powerTo) / 1.36).toString()
-      : params.powerTo;
-
-    onSearch(params, 'motorcycle');
+    onSearch(buildSearchParams(form), 'motorcycle');
   };
 
   return (

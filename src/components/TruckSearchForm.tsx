@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { buildSearchParams, buildSearchQuery } from '../utils/searchQuery';
 import { FaTruck, FaCalendarAlt, FaWeightHanging, FaEuroSign } from 'react-icons/fa';
 import { GiGearStick } from 'react-icons/gi';
 import { FaBolt } from 'react-icons/fa';
@@ -50,17 +51,7 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
     const fetchCount = async () => {
       setCountLoading(true);
       try {
-        const cleanedParams: Record<string, string> = {};
-        for (const key in form) {
-          const value = (form as any)[key];
-          if (value !== '' && value !== null && value !== undefined) {
-            cleanedParams[key] = value;
-          }
-        }
-
-        if (cleanedParams.yearFrom) cleanedParams.first_registration = cleanedParams.yearFrom;
-
-        const query = new URLSearchParams(cleanedParams).toString();
+        const query = buildSearchQuery(form);
         const response = await axios.get(`${API_BASE_URL}/api/trucks?${query}`);
         setResultCount(response.data.length);
       } catch (err) {
@@ -81,7 +72,7 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(form);
+    onSearch(buildSearchParams(form));
   };
 
   return (

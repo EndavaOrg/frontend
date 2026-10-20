@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "jest",
+  "jest": { "configFile": "jest.config.cjs" },
+  "mutate": ["src/utils/**/*.ts"],
+  "reporters": ["clear-text", "html", "progress"],
+  "htmlReporter": { "fileName": "reports/mutation/index.html" },
+  "coverageAnalysis": "perTest",
+  "thresholds": { "high": 90, "low": 80, "break": 75 }
+}

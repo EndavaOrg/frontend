@@ -2,8 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Car, Motorcycle, Truck, Vehicle } from '../types/car';
 import { getAuth } from 'firebase/auth';
+import { sortVehicles, paginate, classifyVehicle, type SortOrder } from '../utils/vehicleList';
+import { cleanParams } from '../utils/searchQuery';
 
-type SortOrder = 'none' | 'price-asc' | 'price-desc' | 'mileage-asc' | 'mileage-desc';
 type VehicleType = Car | Motorcycle | Truck | Vehicle;
 
 export default function Results() {
@@ -11,6 +12,7 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>('none');
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchType, setSearchType] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const ITEMS_PER_PAGE = 20; 
@@ -27,6 +29,7 @@ export default function Results() {
         const resultsArray = Array.isArray(parsed) ? parsed : [parsed];
         console.log("✅ AI Results from localStorage:", resultsArray);
         setResults(resultsArray);
+        setSearchType(null); // AI results can be any vehicle type
 
         setTimeout(() => {
           localStorage.removeItem('aiResults');
@@ -48,17 +51,8 @@ export default function Results() {
       return;
     }
 
-    const parsedParams = JSON.parse(rawParams);
-    const cleanedParams: Record<string, string> = {};
-
-    for (const key in parsedParams) {
-      const value = parsedParams[key];
-      if (value !== '' && value !== null && value !== undefined) {
-        cleanedParams[key] = value;
-      }
-    }
-
-    const query = new URLSearchParams(cleanedParams).toString();
+    setSearchType(type);
+    const query = new URLSearchParams(cleanParams(JSON.parse(rawParams))).toString();
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/${type}s?${query}`);
@@ -76,20 +70,7 @@ export default function Results() {
     fetchResults();
   }, [fetchResults]);
 
-  const sortedResults = [...results].sort((a, b) => {
-    switch (sortOrder) {
-      case 'price-asc':
-        return (a.price_eur ?? 0) - (b.price_eur ?? 0);
-      case 'price-desc':
-        return (b.price_eur ?? 0) - (a.price_eur ?? 0);
-      case 'mileage-asc':
-        return (a.mileage_km ?? 0) - (b.mileage_km ?? 0);
-      case 'mileage-desc':
-        return (b.mileage_km ?? 0) - (a.mileage_km ?? 0);
-      default:
-        return 0;
-    }
-  });
+  const sortedResults = sortVehicles(results, sortOrder);
 
   const handleAddToWatchlist = (item: VehicleType) => {
     const auth = getAuth();
@@ -111,20 +92,11 @@ export default function Results() {
     }
   };
 
-  const isCar = (v: VehicleType): v is Car =>
-    'fuel_type' in v && 'gearbox' in v && 'engine_kw' in v;
+  const isCar = (v: VehicleType): v is Car => classifyVehicle(v, searchType) === 'car';
+  const isMotorcycle = (v: VehicleType): v is Motorcycle => classifyVehicle(v, searchType) === 'motorcycle';
+  const isTruck = (v: VehicleType): v is Truck => classifyVehicle(v, searchType) === 'truck';
 
-  const isMotorcycle = (v: VehicleType): v is Motorcycle =>
-    !('fuel_type' in v) && !('gearbox' in v) && 'engine_kw' in v;
-
-  const isTruck = (v: VehicleType): v is Truck =>
-    'fuel_type' in v && 'gearbox' in v && 'first_registration' in v;
-
-  const totalPages = Math.ceil(sortedResults.length / ITEMS_PER_PAGE);
-  const paginatedResults = sortedResults.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const { items: paginatedResults, page: shownPage, totalPages } = paginate(sortedResults, currentPage, ITEMS_PER_PAGE);
 
   const handlePrevPage = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
@@ -153,7 +125,7 @@ export default function Results() {
             id="sortCombined"
             className="form-select form-select-sm shadow-sm"
             value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+            onChange={(e) => { setSortOrder(e.target.value as SortOrder); setCurrentPage(1); }}
           >
             <option value="none">Sortiraj</option>
             <option value="price-asc">Cena: Najnižja najprej</option>
@@ -250,15 +222,15 @@ export default function Results() {
             <button
               className="btn btn-outline-secondary"
               onClick={handlePrevPage}
-              disabled={currentPage === 1}
+              disabled={shownPage === 1}
             >
               ← Prejšnja
             </button>
-            <span className="fw-medium">Stran {currentPage} / {totalPages}</span>
+            <span className="fw-medium">Stran {shownPage} / {totalPages}</span>
             <button
               className="btn btn-outline-secondary"
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={shownPage === totalPages}
             >
               Naslednja →
             </button>

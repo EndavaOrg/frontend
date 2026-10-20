@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { buildSearchParams, buildSearchQuery } from '../utils/searchQuery';
 import { FaCarSide, FaCalendarAlt, FaTachometerAlt, FaGasPump, FaEuroSign, FaWeightHanging } from 'react-icons/fa';
 import { BsSpeedometer2 } from 'react-icons/bs';
 import { GiGearStick } from 'react-icons/gi';
@@ -75,23 +76,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
     const fetchCount = async () => {
       setCountLoading(true);
       try {
-        const cleanedParams: Record<string, string> = {};
-        for (const key in form) {
-          const value = (form as any)[key];
-          if (value !== '' && value !== null && value !== undefined) {
-            cleanedParams[key] = value;
-          }
-        }
-
-        if (cleanedParams.yearFrom) cleanedParams.first_registration = cleanedParams.yearFrom;
-        if (cleanedParams.powerFrom) cleanedParams.engineKwFrom = cleanedParams.powerUnit === 'HP'
-          ? Math.round(Number(cleanedParams.powerFrom) / 1.36).toString()
-          : cleanedParams.powerFrom;
-        if (cleanedParams.powerTo) cleanedParams.engineKwTo = cleanedParams.powerUnit === 'HP'
-          ? Math.round(Number(cleanedParams.powerTo) / 1.36).toString()
-          : cleanedParams.powerTo;
-
-        const query = new URLSearchParams(cleanedParams).toString();
+        const query = buildSearchQuery(form);
         const response = await axios.get(`${API_BASE_URL}/api/cars?${query}`);
         setResultCount(response.data.length);
       } catch (err) {
@@ -112,7 +97,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(form);
+    onSearch(buildSearchParams(form));
   };
 
   return (

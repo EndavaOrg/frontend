@@ -16,10 +16,11 @@ export default function Watchlist() {
     }
 
     const watchlistKey = `watchlist-${user.uid}`;
-    const stored = localStorage.getItem(watchlistKey);
-    if (stored) {
-      setWatchlist(JSON.parse(stored));
-    } else {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(watchlistKey) || '[]');
+      setWatchlist(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      // corrupted entry: show an empty list instead of crashing the page
       setWatchlist([]);
     }
   };

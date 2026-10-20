@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../util/firebaseAuth';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { validatePhone } from '../utils/validation';
 
 const RegisterForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -36,20 +37,16 @@ const RegisterForm: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
 
     if (name === 'telefon') {
-      const phoneRegex = /^[0-9]{6,15}$/;
-      if (!phoneRegex.test(value)) {
-        setErrors((prev) => ({ ...prev, telefon: 'Vnesi validen broj (6-15 cifri)' }));
-      } else {
-        setErrors((prev) => ({ ...prev, telefon: '' }));
-      }
+      setErrors((prev) => ({ ...prev, telefon: validatePhone(value) }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (errors.telefon) {
-      alert('Popravi brojot na telefon!');
+    const phoneError = validatePhone(form.telefon);
+    if (phoneError) {
+      setErrors((prev) => ({ ...prev, telefon: phoneError }));
       return;
     }
 
