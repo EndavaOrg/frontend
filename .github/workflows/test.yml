@@ -1,37 +1,32 @@
-# Frontend unit tests. Put this file in the repository root at .github/workflows/
-# (or merge the job into your existing pipeline). FRONTEND_DIR must point at the
-# folder that contains the frontend package.json.
-name: Frontend unit tests
+name: CI Pipeline
 
 on:
   push:
-    branches: [main, master, develop]
+    branches:
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
-env:
-  FRONTEND_DIR: frontend
-
 jobs:
-  unit-tests:
-    name: Unit tests + coverage
+  test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.FRONTEND_DIR }}
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+          node-version: '20'
+          cache: 'npm'
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      # Fails the job (and every job that `needs:` it) when a test fails
-      # or when coverage drops below the thresholds in jest.config.cjs.
+      # Neuspešen test ali pokritost pod pragom ustavi cevovod
       - name: Run unit tests
         run: npm run test:ci
 
@@ -42,53 +37,30 @@ jobs:
             node -e '
               const t = require("./coverage/coverage-summary.json").total;
               const row = (k) => `| ${k} | ${t[k].pct}% | ${t[k].covered}/${t[k].total} |`;
-              console.log(["### Frontend coverage", "| Metric | % | Covered |", "|---|---|---|",
+              console.log(["### Coverage", "| Metric | % | Covered |", "|---|---|---|",
                 ...["statements","branches","functions","lines"].map(row)].join("\n"));
             ' >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload coverage report
+      - name: Upload test coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-coverage
+          name: coverage
           path: |
-            ${{ env.FRONTEND_DIR }}/coverage/
-            ${{ env.FRONTEND_DIR }}/reports/junit.xml
-          if-no-files-found: warn
+            coverage/
+            reports/junit.xml
 
-  # Example of a downstream job: it only runs when the unit tests pass.
-  build:
-    needs: unit-tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.FRONTEND_DIR }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
-      - run: npm ci
-      - run: npm run build --if-present
-
-  # Slower checks of test quality, run on demand from the Actions tab.
   test-quality:
     if: github.event_name == 'workflow_dispatch'
-    needs: unit-tests
+    needs: test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ${{ env.FRONTEND_DIR }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: ${{ env.FRONTEND_DIR }}/package-lock.json
+          node-version: '20'
+          cache: 'npm'
       - run: npm ci
       - name: Injected bugs must be caught
         run: npm run test:bugs
@@ -98,4 +70,4 @@ jobs:
         if: always()
         with:
           name: mutation-report
-          path: ${{ env.FRONTEND_DIR }}/reports/mutation/
+          path: reports/mutation/
