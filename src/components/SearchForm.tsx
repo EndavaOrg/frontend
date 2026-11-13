@@ -57,7 +57,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
       return;
     }
 
-    axios.get(`${API_BASE_URL}/api/cars/carquery/models?make=${form.make.toLowerCase()}`)
+    axios.get(`${API_BASE_URL}/api/cars/carquery/models?make=${encodeURIComponent(form.make.toLowerCase())}`)
       .then(res => {
         const modelsRaw = res.data?.Models;
         if (!modelsRaw) {
@@ -78,7 +78,7 @@ export default function SearchForm({ onSearch, isActive = true }: Props) {
       try {
         const query = buildSearchQuery(form);
         const response = await axios.get(`${API_BASE_URL}/api/cars?${query}`);
-        setResultCount(response.data.length);
+        setResultCount(Array.isArray(response.data) ? response.data.length : null);
       } catch (err) {
         console.error('Failed to fetch count:', err);
         setResultCount(null);

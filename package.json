@@ -25,8 +25,9 @@
     "react-slick": "^0.30.3",
     "slick-carousel": "^1.8.1"
   },
-    "devDependencies": {
+  "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@playwright/test": "^1.65.0",
     "@stryker-mutator/core": "^8.7.1",
     "@stryker-mutator/jest-runner": "^8.7.1",
     "@testing-library/dom": "^10.4.2",

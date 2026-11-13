@@ -32,7 +32,7 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
 
   useEffect(() => {
     axios.get(`${API_BASE_URL}/api/trucks/makes`)
-      .then(res => setMakes(res.data.sort()))
+      .then(res => setMakes(Array.isArray(res.data) ? [...res.data].sort() : []))
       .catch(err => console.error("Failed to fetch truck makes:", err));
   }, []);
 
@@ -42,8 +42,8 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
       return;
     }
 
-    axios.get(`${API_BASE_URL}/api/trucks/models?make=${form.make}`)
-      .then(res => setModels(res.data.sort()))
+    axios.get(`${API_BASE_URL}/api/trucks/models?make=${encodeURIComponent(form.make)}`)
+      .then(res => setModels(Array.isArray(res.data) ? [...res.data].sort() : []))
       .catch(err => console.error("Failed to fetch truck models:", err));
   }, [form.make]);
 
@@ -53,7 +53,7 @@ export default function TruckSearchForm({ onSearch, isActive = true }: Props) {
       try {
         const query = buildSearchQuery(form);
         const response = await axios.get(`${API_BASE_URL}/api/trucks?${query}`);
-        setResultCount(response.data.length);
+        setResultCount(Array.isArray(response.data) ? response.data.length : null);
       } catch (err) {
         console.error('Failed to fetch count:', err);
         setResultCount(null);

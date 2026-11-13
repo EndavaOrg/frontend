@@ -20,6 +20,15 @@ import {
   type User,
 } from 'firebase/auth';
 
+// Vite inlines this value at build time. If it is missing, every request goes to
+// "undefined/api/..." and all dropdowns and results stay empty without a visible error.
+if (!import.meta.env.VITE_BACKEND_API_URL) {
+  console.error(
+    'VITE_BACKEND_API_URL ni nastavljen. Nastavi ga v .env (lokalno) ali v okoljskih ' +
+    'spremenljivkah na Renderju in ponovno zgradi frontend.'
+  );
+}
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const auth = getAuth();

@@ -6,7 +6,7 @@ import { FaMotorcycle, FaCalendarAlt, FaTachometerAlt, FaEuroSign } from 'react-
 
 
 interface Props {
-  onSearch: (params: any, type: 'car' | 'motorcycle') => void;
+  onSearch: (params: any) => void;
 }
 
 export default function MotorcycleSearchForm({ onSearch }: Props) {
@@ -35,7 +35,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
 
   useEffect(() => {
     axios.get(`${API_BASE_URL}/api/motorcycles/makes`)
-      .then(res => setMakes(res.data || []))
+      .then(res => setMakes(Array.isArray(res.data) ? res.data : []))
       .catch(err => console.error("Failed to fetch motorcycle makes:", err));
   }, []);
 
@@ -44,8 +44,8 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
       setModels([]);
       return;
     }
-    axios.get(`${API_BASE_URL}/api/motorcycles/models?make=${form.make}`)
-      .then(res => setModels(res.data || []))
+    axios.get(`${API_BASE_URL}/api/motorcycles/models?make=${encodeURIComponent(form.make)}`)
+      .then(res => setModels(Array.isArray(res.data) ? res.data : []))
       .catch(err => console.error("Failed to fetch motorcycle models:", err));
   }, [form.make]);
 
@@ -55,7 +55,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
       try {
         const query = buildSearchQuery(form);
         const response = await axios.get(`${API_BASE_URL}/api/motorcycles?${query}`);
-        setResultCount(response.data.length);
+        setResultCount(Array.isArray(response.data) ? response.data.length : null);
       } catch (err) {
         console.error('Failed to fetch count:', err);
         setResultCount(null);
@@ -74,7 +74,7 @@ export default function MotorcycleSearchForm({ onSearch }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(buildSearchParams(form), 'motorcycle');
+    onSearch(buildSearchParams(form));
   };
 
   return (

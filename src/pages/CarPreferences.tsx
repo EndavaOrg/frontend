@@ -37,9 +37,8 @@ const VehiclePreferencesForm: React.FC = () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    const token = await user.getIdToken();
-
     try {
+      const token = await user.getIdToken();
       const res = await fetch(`${API_BASE_URL}/api/users/${user.uid}/preferences/${type}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -65,10 +64,10 @@ const VehiclePreferencesForm: React.FC = () => {
         }
       } else if (type === 'motorcycle') {
         response = await axios.get(`${API_BASE_URL}/api/motorcycles/makes`);
-        setMakes(response.data || []);
+        setMakes(Array.isArray(response.data) ? response.data : []);
       } else if (type === 'truck') {
         response = await axios.get(`${API_BASE_URL}/api/trucks/makes`);
-        setMakes(response.data.sort() || []);
+        setMakes(Array.isArray(response.data) ? [...response.data].sort() : []);
       }
     } catch (err) {
       console.error('Failed to fetch makes:', err);
@@ -85,7 +84,7 @@ const VehiclePreferencesForm: React.FC = () => {
     try {
       let response;
       if (type === 'car') {
-        response = await axios.get(`${API_BASE_URL}/api/cars/carquery/models?make=${make.toLowerCase()}`);
+        response = await axios.get(`${API_BASE_URL}/api/cars/carquery/models?make=${encodeURIComponent(make.toLowerCase())}`);
         const modelsRaw = response.data?.Models;
         if (modelsRaw) {
           const models = (modelsRaw as any[]).map(m => m.model_name);
@@ -94,11 +93,11 @@ const VehiclePreferencesForm: React.FC = () => {
           setModels([]);
         }
       } else if (type === 'motorcycle') {
-        response = await axios.get(`${API_BASE_URL}/api/motorcycles/models?make=${make}`);
-        setModels(response.data || []);
+        response = await axios.get(`${API_BASE_URL}/api/motorcycles/models?make=${encodeURIComponent(make)}`);
+        setModels(Array.isArray(response.data) ? response.data : []);
       } else if (type === 'truck') {
-        response = await axios.get(`${API_BASE_URL}/api/trucks/models?make=${make}`);
-        setModels(response.data.sort() || []);
+        response = await axios.get(`${API_BASE_URL}/api/trucks/models?make=${encodeURIComponent(make)}`);
+        setModels(Array.isArray(response.data) ? [...response.data].sort() : []);
       }
     } catch (err) {
       console.error('Failed to fetch models:', err);
@@ -118,7 +117,6 @@ const VehiclePreferencesForm: React.FC = () => {
   }, [vehicleType]);
 
   useEffect(() => {
-    fetchPreferences(vehicleType);
     fetchMakes(vehicleType);
     setCurrentPref(getEmptyPreference());
     setModels([]);

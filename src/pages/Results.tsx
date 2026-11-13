@@ -56,8 +56,10 @@ export default function Results() {
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/${type}s?${query}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
-      setResults(data);
+      // A non-array body (error object, HTML page) must not crash sorting/pagination.
+      setResults(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Error fetching filtered listings:', err);
       setResults([]);
@@ -81,7 +83,13 @@ export default function Results() {
     }
 
     const watchlistKey = `watchlist-${user.uid}`;
-    const existing = JSON.parse(localStorage.getItem(watchlistKey) || '[]');
+    let existing: any[] = [];
+    try {
+      const parsed = JSON.parse(localStorage.getItem(watchlistKey) || '[]');
+      existing = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      existing = [];
+    }
     const exists = existing.some((x: any) => x._id === (item as any)._id);
     if (!exists) {
       existing.push(item);
@@ -191,8 +199,6 @@ export default function Results() {
 
                       {isTruck(item) && (
                         <>
-                          <li><strong>Letnik:</strong> {item.first_registration ?? '—'}</li>
-                          <li><strong>Kilometri:</strong> {item.mileage_km ? `${item.mileage_km.toLocaleString()} km` : '—'}</li>
                           <li><strong>Gorivo:</strong> {item.fuel_type ?? '—'}</li>
                           <li><strong>Menjalnik:</strong> {item.gearbox ?? '—'}</li>
                           <li><strong>Moč:</strong> {item.engine_kw} kW{item.engine_hp ? ` (${item.engine_hp} HP)` : ''}</li>

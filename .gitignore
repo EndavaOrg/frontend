@@ -25,3 +25,5 @@ dist-ssr
 .env.*
 coverage/
 reports/
+playwright-report/
+test-results/
