@@ -133,7 +133,7 @@ Pomanjkljivosti sem iskal z ročnim pregledom in z mutacijskim testiranjem (Stry
 
 ## 8. Cevovod
 
-`.github/workflows/frontend-tests.yml`:
+`.github/workflows/test.yml`:
 - `unit-tests`: `npm ci` → `npm run test:ci` (`jest --ci --coverage`). Neuspešen test **ali** pokritost pod pragom (`coverageThreshold` v `jest.config.cjs`: 90 % stavki/funkcije/vrstice, 85 % veje) vrne izhodno kodo 1 in ustavi cevovod; preverjeno lokalno (izhod 1 ob padlem testu, 0 ob uspehu).
 - Poročilo o pokritosti: povzetek v *Job summary*, artefakt `frontend-coverage` (HTML `lcov-report`, `lcov.info`, Cobertura XML, `junit.xml`).
 - `build` ima `needs: unit-tests`, zato se ne izvede, če testi padejo.
