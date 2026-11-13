@@ -81,12 +81,15 @@ jobs:
 
       - name: Wake up backend (Render)
         run: |
-          for i in $(seq 1 12); do
-            curl -sf "$VITE_BACKEND_API_URL/api/cars/carquery/makes" > /dev/null && exit 0
+          if [ -z "$VITE_BACKEND_API_URL" ]; then echo "Secret E2E_BACKEND_URL ni nastavljen" && exit 1; fi
+          for i in $(seq 1 18); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$VITE_BACKEND_API_URL/api/cars/carquery/makes" || true)
+            echo "Poskus $i: HTTP $code"
+            [ "$code" = "200" ] && exit 0
             sleep 10
           done
           echo "Backend se ne odziva" && exit 1
-
+          
       - name: Run E2E tests (headless)
         run: npx playwright test
 
